@@ -1,0 +1,156 @@
+# Wiki Generator Web App - Technical Documentation
+
+## Overview
+The Wiki Generator Web App is a modern, self-contained application designed to create and manage single-page HTML wikis. The application is containerized using Docker for portability and consistency. It features an admin panel for managing created wikis and a real-time wiki editor with live previews. The generated wikis are fully offline and do not rely on external APIs, CDNs, or internet connectivity.
+
+## Features
+### 1. **Landing Page**
+   - "Create Wiki" button to generate a new wiki.
+   - "Read Me" section with documentation and usage guidelines.
+
+### 2. **Admin Panel**
+   - Displays a list of all created wikis.
+   - Information displayed for each wiki:
+     - **Wiki Name**
+     - **Date and Time of Creation**
+     - **Load Button** (to open the wiki editor)
+     - **Delete Button** (with confirmation popup)
+   - The list dynamically updates as wikis are created or modified.
+   - **Backup Mechanism:** Automatic backup of wikis.
+   - **Wiki Export:** Option to export a wiki as a ZIP file containing all HTML, CSS, and images.
+
+### 3. **Wiki Editor Page**
+   - **Top Right Corner:** "Return to Admin" button.
+   - **Left Sidebar:**
+     - **Add Page** - Allows adding new sections/pages to the wiki.
+     - **Settings** - Theme customization:
+       - Side menu color
+       - Logo
+       - Main content area theme color
+       - Footer text
+     - **Wiki Viewer** - Displays a real-time preview of the wiki using an iframe.
+   - **Main Editing Area:**
+     - Rich-text editor with the ability to format text as:
+       - Bold, Italic, Underline
+       - Headings (H1, H2, etc.)
+       - Bullet points and numbered lists
+       - Breaklines
+       - Tables (with custom row/column options and styles)
+       - Images (with resizing, alignment, and placement controls)
+     - All edits are saved directly to the corresponding HTML wiki file.
+   - **File Management:**
+     - All changes are live and directly update the corresponding HTML wiki file.
+     - Images are stored in a separate folder named after the wiki, located at the same level as the HTML wiki file.
+
+## Wiki Styling (CSS)
+- The generated wikis will use local, self-contained CSS files.
+- **No reliance on external stylesheets (e.g., Tailwind, Bootstrap, or CDNs).**
+- A minimal, lightweight CSS file will be generated for each wiki, ensuring consistent offline rendering.
+- Default styles include:
+  - **Sidebar Navigation:** Adjustable width, background color, and text color.
+  - **Main Content Area:** Readable font, adjustable background color.
+  - **Header/Footer:** Configurable styling and branding.
+  - **Typography:** Serif and sans-serif font options.
+  - **Table & List Styles:** Clean and structured for readability.
+  - **Customizable Themes:** Users can modify colors, spacing, and typography in the settings.
+
+### Example Base CSS (Locally Stored in Each Wiki Folder)
+```
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+.sidebar {
+    width: 250px;
+    background-color: #222;
+    color: #fff;
+    padding: 15px;
+    position: fixed;
+    height: 100%;
+}
+.main-content {
+    margin-left: 270px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+```
+
+## File Structure
+```
+/wiki-generator-app
+│── created_wikis/              # Directory for storing generated wikis
+│   ├── wiki1/                  # Folder for a specific wiki
+│   │   ├── index.html           # Main wiki file
+│   │   ├── styles.css           # Local CSS file
+│   │   ├── images/              # Folder for images related to this wiki
+│   │   │   ├── image1.png
+│   │   │   ├── image2.jpg
+│── app/                         # Main application directory
+│   ├── frontend/                # React or Svelte-based UI
+│   ├── backend/                 # FastAPI or Node.js API
+│   ├── static/                  # CSS, JavaScript, and assets
+│   ├── main.py (or server.js)   # Backend logic
+│── Dockerfile                   # Docker configuration
+│── config.json                  # Configurations for theme and settings
+```
+
+## Technologies
+- **Frontend:** React (Next.js) or Svelte
+- **Backend:** FastAPI (Python) or Node.js (Express)
+- **Storage:** Filesystem-based storage with JSON or SQLite/PostgreSQL
+- **Live Updates:** WebSockets or Event Listeners
+- **Theming & Styling:** Locally stored CSS files (no CDN dependencies)
+- **Admin Panel UI:** ShadCN (React) or Radix UI
+- **Containerization:** Docker
+
+## Deployment Using Docker
+### Dockerfile Example
+```
+# Use Node.js for backend
+FROM node:18
+WORKDIR /app
+COPY package.json .
+RUN npm install
+COPY . .
+CMD ["node", "server.js"]
+```
+OR
+```
+# Use Python with FastAPI for backend
+FROM python:3.10
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+### Running the App
+1. Build the Docker container:
+   ```
+   docker build -t wiki-generator .
+   ```
+2. Run the container:
+   ```
+   docker run -d -p 8000:8000 --name wiki-app wiki-generator
+   ```
+3. Access the web app at `http://localhost:8000`
+
+## Missing Features / Considerations
+- **Authentication:** Not required (planned to be free and publicly available).
+- **Backup Mechanism:** Automatic backups of wiki data.
+- **Wiki Export:** Ability to export wikis as a ZIP file (HTML, CSS, and images included).
+- **Multi-user Collaboration:** Not needed (single-user environment).
+- **Markdown Support:** Not required.
+- **Rich-Text Editor:** Integrated editor with:
+  - Bold, Italic, Underline
+  - Headings (H1, H2, etc.)
+  - Lists, tables, and breaklines
+  - Image handling with resizing and alignment options
+
+---
+This documentation is structured for a **modern, scalable, fully offline** web app with a built-in editor for rich-text formatting. Let me know if you need further refinements!
+

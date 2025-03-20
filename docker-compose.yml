@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  wiki-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ./created_wikis:/app/created_wikis
+    environment:
+      - NODE_ENV=production
+ 
