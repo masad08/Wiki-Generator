@@ -1,0 +1,62 @@
+{
+  "id": "testwiki%203_1742559866435",
+  "rows": 3,
+  "columns": 3,
+  "hasHeader": true,
+  "cells": [
+    {
+      "row": 0,
+      "col": 0,
+      "content": "Header 1",
+      "isHeader": true
+    },
+    {
+      "row": 0,
+      "col": 1,
+      "content": "Header 2",
+      "isHeader": true
+    },
+    {
+      "row": 0,
+      "col": 2,
+      "content": "Header 3",
+      "isHeader": true
+    },
+    {
+      "row": 1,
+      "col": 0,
+      "content": "Cell 2,1",
+      "isHeader": false
+    },
+    {
+      "row": 1,
+      "col": 1,
+      "content": "Cell 2,2",
+      "isHeader": false
+    },
+    {
+      "row": 1,
+      "col": 2,
+      "content": "Cell 2,3",
+      "isHeader": false
+    },
+    {
+      "row": 2,
+      "col": 0,
+      "content": "Cell 3,1",
+      "isHeader": false
+    },
+    {
+      "row": 2,
+      "col": 1,
+      "content": "Cell 3,2",
+      "isHeader": false
+    },
+    {
+      "row": 2,
+      "col": 2,
+      "content": "Cell 3,3",
+      "isHeader": false
+    }
+  ]
+}

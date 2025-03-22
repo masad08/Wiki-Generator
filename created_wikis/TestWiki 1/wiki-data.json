@@ -1,0 +1,33 @@
+{
+  "name": "TestWiki 1",
+  "pages": {
+    "page-1": {
+      "id": "page-1",
+      "title": "Page 1",
+      "content": "Edit this&nbsp;<div><br></div><div><br></div><div><br></div><div>section to add&nbsp;</div><div><br></div><div><div class=\"wiki-image-container\" style=\"\">\n        <img src=\"http://localhost:3001/api/wiki/TestWiki 1/images/1742599959335-Trigger tools initiative.png\" alt=\"Wiki Image\" style=\"width: 50px; display: block; margin-left: auto; margin-right: auto; margin-bottom: 10px;\" class=\"wiki-image\">\n      </div><br></div><div><div class=\"wiki-image-container\" style=\"\">\n        <br>\n      </div><br></div><div>content.</div><div><br></div><div><div class=\"table-container\" style=\"position: relative; margin: 1em 0; min-height: 50px;\">\n            <button class=\"table-edit-button\" data-table-id=\"testwiki%201_1742600084422\" style=\"position: absolute; top: 0px; right: 0px; background: rgb(59, 130, 246); color: white; border-width: initial; border-style: none; border-color: initial; border-radius: 4px; padding: 4px 8px; font-size: 12px; z-index: 10;\" onmousedown=\"event.preventDefault(); event.stopPropagation(); window.editTable('testwiki%201_1742600084422', event); return false;\">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Edit Table\n            </button>\n            <iframe src=\"/api/table-renderer?tableId=testwiki%201_1742600084422\" class=\"wiki-table-frame\" data-table-id=\"testwiki%201_1742600084422\" style=\"width: 100%; border-width: initial; border-style: none; border-color: initial; overflow: hidden;\" title=\"Embedded table\"></iframe>\n          </div></div>",
+      "parentId": null,
+      "children": [],
+      "tags": [],
+      "createdAt": "2025-03-21T09:57:36.125Z",
+      "modifiedAt": "2025-03-22T11:12:50.590Z",
+      "author": "User",
+      "order": 0
+    },
+    "page-2": {
+      "id": "page-2",
+      "title": "Page 2",
+      "content": "<div class=\"table-container\" style=\"position: relative; margin: 1em 0; min-height: 50px;\">\n            <button class=\"table-edit-button\" data-table-id=\"testwiki%201_1742580102862\" style=\"position: absolute; top: 0px; right: 0px; background: rgb(59, 130, 246); color: white; border-width: initial; border-style: none; border-color: initial; border-radius: 4px; padding: 4px 8px; font-size: 12px; z-index: 10;\" onmousedown=\"event.preventDefault(); event.stopPropagation(); window.editTable('testwiki%201_1742580102862', event); return false;\">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Edit Table\n            </button>\n            <iframe src=\"/api/table-renderer?tableId=testwiki%201_1742580102862\" class=\"wiki-table-frame\" data-table-id=\"testwiki%201_1742580102862\" style=\"width: 100%; border-width: initial; border-style: none; border-color: initial; overflow: hidden;\" title=\"Embedded table\"></iframe>\n          </div>Historically, medical decision-making was paternalistic – physicians made choices on behalf of patients, believing they knew what was best, and patients were expected to comply (Kilbride and Joffe, 2018). In the mid-20th century, this began to shift toward patient autonomy, spurred by the rise of informed consent and patients’ rights to accept or refuse treatments(Igel and Lerner, 2016).&nbsp;<div><br></div><div><div class=\"wiki-image-container\">\n        <img src=\"http://localhost:3001/api/wiki/TestWiki 1/images/1742580134178-Trigger tools initiative.png\" alt=\"Wiki Image\" style=\"width: 40px; margin-left: auto; margin-right: auto; margin-bottom: 10px;\" class=\"wiki-image\">\n      </div></div><div><br></div><div><br></div><div>By the 1980s, shared decision-making (SDM) had gained traction as the preferred model for clinical encounters(Elwyn et al., 2012).&nbsp;<div><br></div><div><br></div><div><br></div><div>SDM is characterized by a collaborative process: clinicians share medical information and options, and patients contribute their values and preferences,&nbsp;</div><div><br></div><div><div><span style=\"background-color: rgb(255 255 255 / var(--tw-bg-opacity));\">with both parties jointly arriving at decisions that align with the patient’s goals. This evolution – from physician-driven decisions to a partnership model – marked a fundamental change in the patient–physician relationship, aiming to respect patient autonomy while leveraging physician expertise</span></div></div></div>",
+      "parentId": null,
+      "children": [],
+      "tags": [],
+      "createdAt": "2025-03-21T09:57:58.994Z",
+      "modifiedAt": "2025-03-22T10:27:39.737Z",
+      "author": "User",
+      "order": 1
+    }
+  },
+  "tags": [],
+  "createdAt": "2025-03-21T09:57:17.268Z",
+  "modifiedAt": "2025-03-21T09:57:17.268Z",
+  "logoUrl": ""
+}

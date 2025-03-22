@@ -1,0 +1,16 @@
+{
+  "id": "testwiki 3_1742569841775",
+  "type": "bordered",
+  "tableStyles": {
+    "width": "100%",
+    "borderCollapse": "collapse",
+    "margin": "1em 0",
+    "border": "2px solid #ddd"
+  },
+  "headerStyles": {},
+  "cellStyles": {
+    "border": "2px solid #ddd",
+    "padding": "10px",
+    "textAlign": "left"
+  }
+}
