@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>1</title>
-    <style>
+    <style>:root {
+  --text-default: #363636;
+
 :root {
     --primary-color: #2563eb;
     --primary-hover: #1d4ed8;
@@ -12,7 +14,7 @@
     --sidebar-hover: #374151;
     --text-primary: #111827;
     --text-secondary: #4b5563;
-    --bg-primary: #ffffff;
+    --bg-primary: #e3e3e3;
     --bg-secondary: #f9fafb;
 }
 
@@ -343,7 +345,53 @@ img {
       max-width: 80%;
       height: auto;
       border-radius: 4px;
-    }</style>
+    }
+  .sidebar-logo {
+    padding: 1rem;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  .sidebar-logo img {
+    max-width: 80%;
+    height: auto;
+    border-radius: 4px;
+  }
+  /* Main content default text */
+  .page-content {
+    color: #111827;
+  }
+  
+  /* Main content headers - primary color */
+  .page-header h1,
+  .page-content h1, 
+  .page-content h2, 
+  .page-content h3, 
+  .page-content h4, 
+  .page-content h5, 
+  .page-content h6 {
+    color: #111827;
+  }
+  
+  /* All sidebar text including title and tags section - default color */
+  .sidebar-title,
+  .sidebar-nav a,
+  .sidebar-nav li,
+  .wiki-tags h3,
+  .sidebar .wiki-tags {
+    color: #363636;
+  }
+  
+  /* Secondary color for metadata, logs, tags and footer */
+  .page-info,
+  .page-metadata,
+  .page-content .metadata,
+  .page-content .description,
+  .page-content small,
+  .tag,
+  footer {
+    color: #4b5563;
+  }
+  </style>
     <script>window.wikiData = {"name":"1","pages":{"page-1":{"id":"page-1","title":"Page 1","content":"Edit this section to add content.","parentId":null,"children":[],"tags":[],"createdAt":"2025-03-22T02:18:12.101Z","modifiedAt":"2025-03-22T02:18:12.101Z","author":"User","order":0}},"tags":[],"createdAt":"2025-03-22T02:17:58.927Z","modifiedAt":"2025-03-22T02:17:58.927Z","logoUrl":""};</script>
 </head>
 <body>

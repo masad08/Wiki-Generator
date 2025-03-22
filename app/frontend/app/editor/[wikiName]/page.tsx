@@ -287,90 +287,141 @@ export default function EditorPage() {
   };
 
   // Fetch wiki content
-  useEffect(() => {
-    const fetchWiki = async () => {
-      try {
-        const response = await fetch(`http://localhost:3001/api/wiki/${encodedWikiName}`);
+ // Fetch wiki content
+useEffect(() => {
+  const fetchWiki = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/wiki/${encodedWikiName}`);
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch wiki');
-        }
-
-        const html = await response.text();
-
-        // Extract wiki data first
-        const wikiDataMatch = html.match(/window\.wikiData = ([\s\S]*?);<\/script>/);
-        if (wikiDataMatch && wikiDataMatch[1]) {
-          const parsedData = JSON.parse(wikiDataMatch[1]);
-
-          // Fix the data structure - ensure tags is a Set object
-          const wikiData = {
-            ...parsedData,
-            tags: new Set(parsedData.tags || [])
-          };
-
-          setWiki(wikiData);
-          setAvailableTags(new Set(wikiData.tags));
-          console.log("Wiki data loaded:", wikiData);
-
-          // After loading wiki data, convert any HTML tables back to iframes for editing
-          const processedHtml = await convertHtmlTablesToIframes(html);
-          setHtmlContent(processedHtml);
-        } else {
-          console.error("Could not find window.wikiData in HTML");
-
-          // Initialize minimal wiki structure instead of showing error
-          const defaultWiki = {
-            name: wikiName,
-            pages: {},
-            tags: new Set<string>(),
-            createdAt: new Date().toISOString(),
-            modifiedAt: new Date().toISOString()
-          };
-
-          setWiki(defaultWiki);
-          setHtmlContent(html);
-          console.log("Created default wiki structure:", defaultWiki);
-        }
-
-        // Extract CSS from the HTML
-        const cssMatch = html.match(/<style>([\s\S]*?)<\/style>/);
-        if (cssMatch && cssMatch[1]) {
-          setCssContent(cssMatch[1]);
-
-          // Extract sidebar color
-          const sidebarColorMatch = cssMatch[1].match(/\.sidebar\s*{[^}]*background-color:\s*([^;]+)/);
-          if (sidebarColorMatch && sidebarColorMatch[1]) {
-            setSidebarColor(sidebarColorMatch[1].trim());
-          }
-
-          // Extract main content color
-          const mainColorMatch = cssMatch[1].match(/\.main-content\s*{[^}]*background-color:\s*([^;]+)/);
-          if (mainColorMatch && mainColorMatch[1]) {
-            setMainColor(mainColorMatch[1].trim());
-          }
-        }
-
-        // Extract footer text
-        const footerMatch = html.match(/<footer[^>]*>([\s\S]*?)<\/footer>/);
-        if (footerMatch && footerMatch[1]) {
-          setFooterText(footerMatch[1].trim());
-        }
-
-        // Extract logo URL
-        const logoMatch = html.match(/<img[^>]*src="([^"]+)"[^>]*class="logo"/);
-        if (logoMatch && logoMatch[1]) {
-          setLogoUrl(logoMatch[1]);
-        }
-      } catch (error) {
-        console.error('Error fetching wiki:', error);
-        alert('Failed to load wiki. Redirecting to admin panel.');
-        router.push('/admin');
+      if (!response.ok) {
+        throw new Error('Failed to fetch wiki');
       }
-    };
 
-    fetchWiki();
-  }, [encodedWikiName, router, wikiName]);
+      const html = await response.text();
+
+      // Extract wiki data first
+      const wikiDataMatch = html.match(/window\.wikiData = ([\s\S]*?);<\/script>/);
+      if (wikiDataMatch && wikiDataMatch[1]) {
+        const parsedData = JSON.parse(wikiDataMatch[1]);
+
+        // Fix the data structure - ensure tags is a Set object
+        const wikiData = {
+          ...parsedData,
+          tags: new Set(parsedData.tags || [])
+        };
+
+        setWiki(wikiData);
+        setAvailableTags(new Set(wikiData.tags));
+        console.log("Wiki data loaded:", wikiData);
+
+        // After loading wiki data, convert any HTML tables back to iframes for editing
+        const processedHtml = await convertHtmlTablesToIframes(html);
+        setHtmlContent(processedHtml);
+      } else {
+        console.error("Could not find window.wikiData in HTML");
+
+        // Initialize minimal wiki structure instead of showing error
+        const defaultWiki = {
+          name: wikiName,
+          pages: {},
+          tags: new Set<string>(),
+          createdAt: new Date().toISOString(),
+          modifiedAt: new Date().toISOString()
+        };
+
+        setWiki(defaultWiki);
+        setHtmlContent(html);
+        console.log("Created default wiki structure:", defaultWiki);
+      }
+
+      // Extract CSS from the HTML
+      const cssMatch = html.match(/<style>([\s\S]*?)<\/style>/);
+      if (cssMatch && cssMatch[1]) {
+        setCssContent(cssMatch[1]);
+
+        // Extract sidebar color
+        const sidebarColorMatch = cssMatch[1].match(/\.sidebar\s*{[^}]*background-color:\s*([^;]+)/);
+        if (sidebarColorMatch && sidebarColorMatch[1]) {
+          setSidebarColor(sidebarColorMatch[1].trim());
+        }
+
+        // Extract main content color
+        const mainColorMatch = cssMatch[1].match(/\.main-content\s*{[^}]*background-color:\s*([^;]+)/);
+        if (mainColorMatch && mainColorMatch[1]) {
+          setMainColor(mainColorMatch[1].trim());
+        }
+
+        // Extract text default color
+        const textDefaultColorMatch = cssMatch[1].match(/--text-default:\s*([^;]+)/);
+        if (textDefaultColorMatch && textDefaultColorMatch[1]) {
+          setTextDefaultColor(textDefaultColorMatch[1].trim());
+        }
+
+        // Extract text primary color
+        const textPrimaryColorMatch = cssMatch[1].match(/--text-primary:\s*([^;]+)/);
+        if (textPrimaryColorMatch && textPrimaryColorMatch[1]) {
+          setTextPrimaryColor(textPrimaryColorMatch[1].trim());
+        }
+
+        // Extract text secondary color
+        const textSecondaryColorMatch = cssMatch[1].match(/--text-secondary:\s*([^;]+)/);
+        if (textSecondaryColorMatch && textSecondaryColorMatch[1]) {
+          setTextSecondaryColor(textSecondaryColorMatch[1].trim());
+        }
+
+        // Alternative approach if the CSS variables aren't found - extract from specific selectors
+        if (!textDefaultColorMatch) {
+          const pageContentColorMatch = cssMatch[1].match(/\.page-content\s*{[^}]*color:\s*([^;]+)/);
+          if (pageContentColorMatch && pageContentColorMatch[1]) {
+            setTextDefaultColor(pageContentColorMatch[1].trim());
+          } else {
+            // Default fallback
+            setTextDefaultColor('#333333');
+          }
+        }
+
+        if (!textPrimaryColorMatch) {
+          const headingColorMatch = cssMatch[1].match(/\.page-header h1\s*{[^}]*color:\s*([^;]+)/);
+          if (headingColorMatch && headingColorMatch[1]) {
+            setTextPrimaryColor(headingColorMatch[1].trim());
+          } else {
+            // Default fallback
+            setTextPrimaryColor('#111827');
+          }
+        }
+
+        if (!textSecondaryColorMatch) {
+          const metadataColorMatch = cssMatch[1].match(/\.page-info\s*{[^}]*color:\s*([^;]+)/);
+          if (metadataColorMatch && metadataColorMatch[1]) {
+            setTextSecondaryColor(metadataColorMatch[1].trim());
+          } else {
+            // Default fallback
+            setTextSecondaryColor('#4b5563');
+          }
+        }
+      }
+
+      // Extract footer text
+      const footerMatch = html.match(/<footer[^>]*>([\s\S]*?)<\/footer>/);
+      if (footerMatch && footerMatch[1]) {
+        setFooterText(footerMatch[1].trim());
+      }
+
+      // Extract logo URL
+      const logoMatch = html.match(/<img[^>]*src="([^"]+)"[^>]*class="logo"/);
+      if (logoMatch && logoMatch[1]) {
+        setLogoUrl(logoMatch[1]);
+      }
+    } catch (error) {
+      console.error('Error fetching wiki:', error);
+      alert('Failed to load wiki. Redirecting to admin panel.');
+      router.push('/admin');
+    }
+  };
+
+  fetchWiki();
+}, [encodedWikiName, router, wikiName]);
+  
 
   // Save wiki content
   const saveWiki = async () => {
@@ -647,47 +698,116 @@ export default function EditorPage() {
   };
 
   // Update CSS with new settings
-  const updateCss = async () => {
-    // Add logo styles to the CSS
-    const logoStyles = `
-    .sidebar-logo {
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1rem;
+// Update CSS with new settings
+const updateCss = async () => {
+  // Add logo styles to the CSS
+  const logoStyles = `
+  .sidebar-logo {
+    padding: 1rem;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  .sidebar-logo img {
+    max-width: 80%;
+    height: auto;
+    border-radius: 4px;
+  }`;
+
+  // Add explicit text styling for wiki content
+  const textStyles = `
+  /* Main content default text */
+  .page-content {
+    color: ${textPrimaryColor};
+  }
+  
+  /* Main content headers - primary color */
+  .page-header h1,
+  .page-content h1, 
+  .page-content h2, 
+  .page-content h3, 
+  .page-content h4, 
+  .page-content h5, 
+  .page-content h6 {
+    color: ${textPrimaryColor};
+  }
+  
+  /* All sidebar text including title and tags section - default color */
+  .sidebar-title,
+  .sidebar-nav a,
+  .sidebar-nav li,
+  .wiki-tags h3,
+  .sidebar .wiki-tags {
+    color: ${textDefaultColor};
+  }
+  
+  /* Secondary color for metadata, logs, tags and footer */
+  .page-info,
+  .page-metadata,
+  .page-content .metadata,
+  .page-content .description,
+  .page-content small,
+  .tag,
+  footer {
+    color: ${textSecondaryColor};
+  }
+  `;
+
+  // Check if CSS variables exist, and add them if they don't
+  let updatedCss = cssContent;
+  
+  // Replace existing CSS variables if they exist
+  if (updatedCss.includes('--text-default:')) {
+    updatedCss = updatedCss.replace(/--text-default:[^;]+;/, `--text-default: ${textDefaultColor};`);
+  } else {
+    // Add CSS variable if it doesn't exist
+    updatedCss = `:root {\n  --text-default: ${textDefaultColor};\n` + updatedCss;
+  }
+  
+  if (updatedCss.includes('--text-primary:')) {
+    updatedCss = updatedCss.replace(/--text-primary:[^;]+;/, `--text-primary: ${textPrimaryColor};`);
+  } else if (updatedCss.includes(':root {')) {
+    // Add to existing root
+    updatedCss = updatedCss.replace(/:root {/, `:root {\n  --text-primary: ${textPrimaryColor};`);
+  } else {
+    // Add new root
+    updatedCss = `:root {\n  --text-primary: ${textPrimaryColor};\n` + updatedCss;
+  }
+  
+  if (updatedCss.includes('--text-secondary:')) {
+    updatedCss = updatedCss.replace(/--text-secondary:[^;]+;/, `--text-secondary: ${textSecondaryColor};`);
+  } else if (updatedCss.includes(':root {')) {
+    // Add to existing root
+    updatedCss = updatedCss.replace(/:root {/, `:root {\n  --text-secondary: ${textSecondaryColor};`);
+  } else {
+    // Add new root
+    updatedCss = `:root {\n  --text-secondary: ${textSecondaryColor};\n` + updatedCss;
+  }
+  
+  // Continue with existing background color replacements
+  updatedCss = updatedCss
+    .replace(/\.sidebar\s*{[^}]*background-color:[^;]+;/g, match =>
+      match.replace(/background-color:[^;]+;/, `background-color: ${sidebarColor};`))
+    .replace(/\.main-content\s*{[^}]*background-color:[^;]+;/g, match =>
+      match.replace(/background-color:[^;]+;/, `background-color: ${mainColor};`))
+    .replace(/--bg-primary:[^;]+;/, `--bg-primary: ${mainColor};`)
+    + logoStyles
+    + textStyles;
+
+  setCssContent(updatedCss);
+
+  // Update the HTML with the new CSS
+  if (wiki) {
+    try {
+      const htmlWithCss = await generateWikiHtml(wiki);
+      setHtmlContent(htmlWithCss);
+    } catch (error) {
+      console.error("Error generating wiki HTML:", error);
     }
-    .sidebar-logo img {
-      max-width: 80%;
-      height: auto;
-      border-radius: 4px;
-    }`;
-  
-    // Also update the --bg-primary CSS variable
-    const updatedCss = cssContent
-      .replace(/\.sidebar\s*{[^}]*background-color:[^;]+;/g, match =>
-        match.replace(/background-color:[^;]+;/, `background-color: ${sidebarColor};`))
-      .replace(/\.main-content\s*{[^}]*background-color:[^;]+;/g, match =>
-        match.replace(/background-color:[^;]+;/, `background-color: ${mainColor};`))
-      .replace(/--text-default:[^;]+;/, `--text-default: ${textDefaultColor};`)
-      .replace(/--text-primary:[^;]+;/, `--text-primary: ${textPrimaryColor};`)
-      .replace(/--text-secondary:[^;]+;/, `--text-secondary: ${textSecondaryColor};`)
-      .replace(/--bg-primary:[^;]+;/, `--bg-primary: ${mainColor};`) // Add this line
-      + logoStyles;
-  
-    setCssContent(updatedCss);
-  
-    // Update the HTML with the new CSS
-    if (wiki) {
-      try {
-        const htmlWithCss = await generateWikiHtml(wiki);
-        setHtmlContent(htmlWithCss);
-      } catch (error) {
-        console.error("Error generating wiki HTML:", error);
-      }
-    }
-  
-    // Save the changes
-    await saveWiki();
-  };
+  }
+
+  // Save the changes
+  await saveWiki();
+};
 
 
   // Modified generateWikiHtml to handle tables correctly
@@ -1899,6 +2019,7 @@ useEffect(() => {
     setTimeout(() => {
       if (editorElement) {
         editorElement.style.setProperty('background-color', mainColor, 'important');
+        editorElement.style.setProperty('color', textPrimaryColor, 'important'); // Add this line
       }
     }, 10);
   };
@@ -1908,7 +2029,7 @@ useEffect(() => {
     editorElement.style.setProperty('background-color', mainColor, 'important');
     
     // Apply default text color
-    editorElement.style.setProperty('color', textDefaultColor, 'important');
+    editorElement.style.setProperty('color', textPrimaryColor, 'important');
     
     // Create or update style tag for more specific text styling
     const styleId = 'editor-color-styles';

@@ -1,3 +1,5 @@
+:root {
+  --text-default: #363636;
 
 :root {
     --primary-color: #2563eb;
@@ -6,7 +8,7 @@
     --sidebar-hover: #374151;
     --text-primary: #111827;
     --text-secondary: #4b5563;
-    --bg-primary: #ffffff;
+    --bg-primary: #e3e3e3;
     --bg-secondary: #f9fafb;
 }
 
@@ -338,3 +340,49 @@ img {
       height: auto;
       border-radius: 4px;
     }
+  .sidebar-logo {
+    padding: 1rem;
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  .sidebar-logo img {
+    max-width: 80%;
+    height: auto;
+    border-radius: 4px;
+  }
+  /* Main content default text */
+  .page-content {
+    color: #111827;
+  }
+  
+  /* Main content headers - primary color */
+  .page-header h1,
+  .page-content h1, 
+  .page-content h2, 
+  .page-content h3, 
+  .page-content h4, 
+  .page-content h5, 
+  .page-content h6 {
+    color: #111827;
+  }
+  
+  /* All sidebar text including title and tags section - default color */
+  .sidebar-title,
+  .sidebar-nav a,
+  .sidebar-nav li,
+  .wiki-tags h3,
+  .sidebar .wiki-tags {
+    color: #363636;
+  }
+  
+  /* Secondary color for metadata, logs, tags and footer */
+  .page-info,
+  .page-metadata,
+  .page-content .metadata,
+  .page-content .description,
+  .page-content small,
+  .tag,
+  footer {
+    color: #4b5563;
+  }
+  
