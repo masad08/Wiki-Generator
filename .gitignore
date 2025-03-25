@@ -45,8 +45,12 @@ lerna-debug.log*
 .env.production.local
 
 # User-generated content
-created_wikis/
-app/frontend/data/tables/
+created_wikis/*
+!created_wikis/.gitkeep
+app/frontend/data/tables/*
+!app/frontend/data/tables/.gitkeep
+data/tables/*
+!data/tables/.gitkeep
 
 # Editor directories and files
 .idea

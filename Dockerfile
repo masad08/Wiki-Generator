@@ -39,8 +39,10 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-# Create empty created_wikis directory
+# Create all necessary empty directories
 RUN mkdir -p created_wikis
+RUN mkdir -p app/frontend/data/tables
+RUN mkdir -p data/tables
 
 # Copy built backend
 COPY --from=builder /app/app/backend/dist ./app/backend/dist
