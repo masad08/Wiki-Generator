@@ -334,6 +334,18 @@ img {
     font-size: 0.75rem;
 }
 
+/* Add styles for sidebar tags specifically */
+.sidebar .tag {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Page tags should use theme colors */
+.page-tags .tag {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
 .page-header {
     margin-bottom: 2rem;
 }
@@ -392,7 +404,14 @@ img {
   max-width: 1200px; /* adjust this width as needed */
   margin-left: auto;
   margin-right: auto;
-  width: fit-content;
+  width: 100%;
+}
+
+.wiki-tags h3 {
+  color: #fff;
+  font-size: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 `;
 // Create a new wiki
@@ -606,11 +625,51 @@ const generateWikiTemplate = (wiki) => {
       .sidebar {
         position: static;
         width: 250px;
+        height: 100vh;
+        overflow-y: auto;
+        flex-shrink: 0;
+        background-color: var(--sidebar-bg);
+        color: #fff;
+      }
+      
+      .sidebar-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-align: center;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+      
+      .sidebar-nav a {
+        color: rgba(255, 255, 255, 0.9);
+      }
+      
+      .sidebar-nav a:hover {
+        background-color: var(--sidebar-hover);
+        color: #fff;
+      }
+      
+      .sidebar-nav a.active {
+        background-color: var(--primary-color);
+        color: white;
       }
       
       .main-content {
         width: 950px;
-        margin-left: 0;
+        margin-left: 0 !important; /* Override the default margin */
+        flex-grow: 1;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+      }
+      
+      .wiki-wrapper {
+        display: flex;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
       }
     </style>
     <script>
@@ -722,38 +781,32 @@ exports.getWikis = getWikis;
 // Get a specific wiki
 const getWiki = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("🔍 BACKEND-SERVE: Starting wiki fetch process");
         const wikiName = decodeURIComponent(req.params.wikiName);
         const wikiDir = path_1.default.join(wikisDir, wikiName);
         const wikiHtmlPath = path_1.default.join(wikiDir, 'index.html');
-        console.log(`🔍 BACKEND-SERVE: Requested wiki "${wikiName}" from ${wikiDir}`);
         // Check if wiki exists
         if (!(yield fs_extra_1.default.pathExists(wikiDir))) {
-            console.error(`🔍 BACKEND-SERVE: Wiki directory not found: ${wikiDir}`);
+            console.error(`Wiki directory not found: ${wikiDir}`);
             return res.status(404).json({ error: 'Wiki not found' });
         }
         // Check if HTML file exists
         if (!(yield fs_extra_1.default.pathExists(wikiHtmlPath))) {
-            console.error(`🔍 BACKEND-SERVE: Wiki HTML file not found: ${wikiHtmlPath}`);
+            console.error(`Wiki HTML file not found: ${wikiHtmlPath}`);
             return res.status(404).json({ error: 'Wiki HTML not found' });
         }
         // Read the HTML content
         let content = yield fs_extra_1.default.readFile(wikiHtmlPath, 'utf-8');
-        console.log(`🔍 BACKEND-SERVE: Read wiki HTML content, length: ${content.length}`);
         // Process table placeholders in the HTML
         if (content.includes('Table data not found')) {
-            console.log("🔍 BACKEND-SERVE: Found 'Table data not found' placeholders in HTML, processing tables");
             // Check if tables directory exists
             const tablesDir = path_1.default.join(wikiDir, 'tables');
             if (yield fs_extra_1.default.pathExists(tablesDir)) {
-                console.log(`🔍 BACKEND-SERVE: Tables directory exists: ${tablesDir}`);
                 // List all files in the tables directory
                 try {
-                    const files = yield fs_extra_1.default.readdir(tablesDir);
-                    console.log(`🔍 BACKEND-SERVE: Files in tables directory: ${files.join(', ')}`);
+                    yield fs_extra_1.default.readdir(tablesDir);
                 }
                 catch (err) {
-                    console.error(`🔍 BACKEND-SERVE: Error reading tables directory:`, err);
+                    console.error(`Error reading tables directory:`, err);
                 }
                 // Find all table IDs in content
                 const tableIdRegex = /data-table-id="([^"]+)"/g;
@@ -762,29 +815,22 @@ const getWiki = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 while ((match = tableIdRegex.exec(content)) !== null) {
                     const tableId = match[1];
                     tableIds.push(tableId);
-                    console.log(`🔍 BACKEND-SERVE: Found table ID in content: ${tableId}`);
                 }
                 // Find all table placeholders
                 const tablePlaceholders = content.match(/<div class="table-error">Table data not found<\/div>/g);
-                console.log(`🔍 BACKEND-SERVE: Found ${(tablePlaceholders === null || tablePlaceholders === void 0 ? void 0 : tablePlaceholders.length) || 0} table placeholders and ${tableIds.length} table IDs`);
                 // Process each table
                 for (const tableId of tableIds) {
                     // Decode the table ID from URL encoding
                     const decodedTableId = decodeURIComponent(tableId);
-                    console.log(`🔍 BACKEND-SERVE: Decoded table ID from ${tableId} to ${decodedTableId}`);
                     const dataPath = path_1.default.join(tablesDir, `${decodedTableId}.json`);
                     const stylePath = path_1.default.join(tablesDir, `${decodedTableId}_style.json`);
-                    console.log(`🔍 BACKEND-SERVE: Checking table data for ${decodedTableId} at ${dataPath}`);
-                    console.log(`🔍 BACKEND-SERVE: Checking table style for ${decodedTableId} at ${stylePath}`);
                     if ((yield fs_extra_1.default.pathExists(dataPath)) && (yield fs_extra_1.default.pathExists(stylePath))) {
-                        console.log(`🔍 BACKEND-SERVE: Table data and style found for ${decodedTableId}`);
                         try {
                             // Read table data
                             const data = JSON.parse(yield fs_extra_1.default.readFile(dataPath, 'utf8'));
                             const style = JSON.parse(yield fs_extra_1.default.readFile(stylePath, 'utf8'));
                             // Create a regex pattern that looks for both the table container and the error message
                             const tableErrorPattern = new RegExp(`<div[^>]*data-table-id="${decodedTableId}"[^>]*>[\\s\\S]*?<div class="table-error">Table data not found<\\/div>[\\s\\S]*?<\\/div>|<div class="table-error">Table data not found<\\/div>`, 'g');
-                            console.log(`🔍 BACKEND-SERVE: Replacing placeholder for table ${decodedTableId} with actual table HTML`);
                             // Helper to convert style object to CSS string
                             const styleToString = (styleObj) => {
                                 return Object.entries(styleObj || {})
@@ -822,33 +868,26 @@ const getWiki = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                             const contentBefore = content;
                             content = content.replace(tableErrorPattern, tableHtml);
                             if (contentBefore === content) {
-                                console.error(`🔍 BACKEND-SERVE: Failed to replace placeholder for table ${decodedTableId}`);
-                            }
-                            else {
-                                console.log(`🔍 BACKEND-SERVE: Successfully replaced placeholder for table ${decodedTableId}`);
+                                console.error(`Failed to replace placeholder for table ${decodedTableId}`);
                             }
                         }
                         catch (error) {
-                            console.error(`🔍 BACKEND-SERVE: Error processing table ${decodedTableId}:`, error);
+                            console.error(`Error processing table ${decodedTableId}:`, error);
                         }
                     }
                     else {
-                        console.error(`🔍 BACKEND-SERVE: Table data or style file not found for ${decodedTableId}`);
+                        console.error(`Table data or style file not found for ${decodedTableId}`);
                     }
                 }
             }
             else {
-                console.error(`🔍 BACKEND-SERVE: Tables directory not found: ${tablesDir}`);
+                console.error(`Tables directory not found: ${tablesDir}`);
             }
         }
-        else {
-            console.log("🔍 BACKEND-SERVE: No table placeholders found in HTML");
-        }
-        console.log("🔍 BACKEND-SERVE: Serving wiki HTML content");
         res.send(content);
     }
     catch (error) {
-        console.error('🔍 BACKEND-SERVE: Error fetching wiki:', error);
+        console.error('Error fetching wiki:', error);
         res.status(500).json({ error: 'Failed to fetch wiki' });
     }
 });
@@ -856,78 +895,60 @@ exports.getWiki = getWiki;
 // Update wiki content
 const updateWiki = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("🔍 BACKEND: Starting wiki update process");
         const wikiName = decodeURIComponent(req.params.wikiName);
         const { content, cssTheme, wikiData, tableData } = req.body;
-        console.log(`🔍 BACKEND: Updating wiki "${wikiName}" with:`, {
-            contentLength: (content === null || content === void 0 ? void 0 : content.length) || 0,
-            cssThemeLength: (cssTheme === null || cssTheme === void 0 ? void 0 : cssTheme.length) || 0,
-            wikiDataProvided: !!wikiData,
-            tableDataEntries: tableData ? Object.keys(tableData).length : 0
-        });
         const wikiDir = path_1.default.join(wikisDir, wikiName);
         const wikiDataPath = path_1.default.join(wikiDir, 'wiki-data.json');
         // Check if wiki exists
         if (!(yield fs_extra_1.default.pathExists(wikiDir))) {
-            console.error(`🔍 BACKEND: Wiki directory not found: ${wikiDir}`);
+            console.error(`Wiki directory not found: ${wikiDir}`);
             return res.status(404).json({ error: 'Wiki not found' });
         }
         // Update HTML content
         if (content) {
-            console.log(`🔍 BACKEND: Saving HTML content to ${path_1.default.join(wikiDir, 'index.html')}`);
             yield fs_extra_1.default.writeFile(path_1.default.join(wikiDir, 'index.html'), content);
         }
         // Update wiki data if provided
         if (wikiData) {
-            console.log(`🔍 BACKEND: Saving wiki data to ${wikiDataPath}`);
             yield fs_extra_1.default.writeFile(wikiDataPath, JSON.stringify(wikiData, null, 2));
         }
         // Update CSS if provided
         if (cssTheme) {
-            console.log(`🔍 BACKEND: Saving CSS theme to ${path_1.default.join(wikiDir, 'styles.css')}`);
             yield fs_extra_1.default.writeFile(path_1.default.join(wikiDir, 'styles.css'), cssTheme);
         }
         // Save table data if provided
         if (tableData && Object.keys(tableData).length > 0) {
-            console.log(`🔍 BACKEND: Saving ${Object.keys(tableData).length} tables for wiki ${wikiName}`);
             // Create tables directory if it doesn't exist
             const tablesDir = path_1.default.join(wikiDir, 'tables');
             yield fs_extra_1.default.ensureDir(tablesDir);
-            console.log(`🔍 BACKEND: Ensured tables directory exists: ${tablesDir}`);
             // Save each table's data and style
             for (const [tableId, tableInfo] of Object.entries(tableData)) {
                 const { data, style } = tableInfo;
                 if (data && style) {
                     // Decode the table ID from URL encoding
                     const decodedTableId = decodeURIComponent(tableId);
-                    console.log(`🔍 BACKEND: Decoded table ID from ${tableId} to ${decodedTableId}`);
                     const dataPath = path_1.default.join(tablesDir, `${decodedTableId}.json`);
                     const stylePath = path_1.default.join(tablesDir, `${decodedTableId}_style.json`);
-                    console.log(`🔍 BACKEND: Saving table data for ${decodedTableId} to ${dataPath}`);
-                    console.log(`🔍 BACKEND: Saving table style for ${decodedTableId} to ${stylePath}`);
                     // Save data and style files
                     yield fs_extra_1.default.writeFile(dataPath, JSON.stringify(data, null, 2));
                     yield fs_extra_1.default.writeFile(stylePath, JSON.stringify(style, null, 2));
-                    console.log(`🔍 BACKEND: Successfully saved table ${decodedTableId} to ${wikiName}/tables/`);
                 }
                 else {
-                    console.error(`🔍 BACKEND: Missing data or style for table ${tableId}`);
+                    console.error(`Missing data or style for table ${tableId}`);
                 }
             }
             // Verify all tables were saved
             try {
-                const files = yield fs_extra_1.default.readdir(tablesDir);
-                console.log(`🔍 BACKEND: Files in tables directory after save: ${files.join(', ')}`);
+                yield fs_extra_1.default.readdir(tablesDir);
             }
             catch (err) {
-                console.error(`🔍 BACKEND: Error reading tables directory after save:`, err);
+                console.error(`Error reading tables directory after save:`, err);
             }
         }
-        console.log(`🔍 BACKEND: Wiki "${wikiName}" updated successfully`);
         res.json({ message: 'Wiki updated successfully' });
     }
     catch (error) {
-        console.error('🔍 BACKEND: Error updating wiki:', error);
+        console.error('Error updating wiki:', error);
         res.status(500).json({ error: 'Failed to update wiki' });
     }
 });

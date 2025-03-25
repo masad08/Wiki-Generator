@@ -112,6 +112,16 @@ export default function EditorPage() {
 
   const [defaultAuthor, setDefaultAuthor] = useState(''); // Add this line
 
+  // Add error notification states
+  const [isErrorVisible, setIsErrorVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [saveError, setSaveError] = useState(false);
+  const [saveErrorMessage, setSaveErrorMessage] = useState('');
+  const [logoUploadError, setLogoUploadError] = useState('');
+  const [tableError, setTableError] = useState('');
+  const [tableEditorError, setTableEditorError] = useState('');
+  const [imageUploadError, setImageUploadError] = useState('');
+
   const convertHtmlTablesToIframes = async (html: string): Promise<string> => {
     // Find all wiki-table elements
     const tempDiv = document.createElement('div');
@@ -324,8 +334,6 @@ export default function EditorPage() {
               setDefaultAuthor(wikiData.defaultAuthor);
             }
 
-            console.log("Wiki data loaded:", wikiData);
-
             // After loading wiki data, convert any HTML tables back to iframes for editing
             const processedHtml = await convertHtmlTablesToIframes(html);
             setHtmlContent(processedHtml);
@@ -418,8 +426,13 @@ export default function EditorPage() {
         }
       } catch (error) {
         console.error('Error fetching wiki:', error);
-        alert('Failed to load wiki. Redirecting to admin panel.');
-        router.push('/admin');
+        setErrorMessage('Failed to load wiki. Redirecting to admin panel...');
+        setIsErrorVisible(true);
+        
+        // Add slight delay before redirect for better UX
+        setTimeout(() => {
+          router.push('/admin');
+        }, 1500);
       }
     };
 
@@ -477,7 +490,6 @@ export default function EditorPage() {
 
       setWiki(defaultWiki);
       setHtmlContent(html);
-      console.log("Created default wiki structure:", defaultWiki);
     };
 
     fetchWiki();
@@ -486,12 +498,11 @@ export default function EditorPage() {
   // Save wiki content
   const saveWiki = async () => {
     try {
-      console.log("🔍 SAVING PAGE: Starting save process");
       setIsSaving(true);
 
       // Prepare the wiki data for saving
       if (!wiki) {
-        console.error("🔍 SAVING PAGE: Cannot save - wiki data is null");
+        console.error("Cannot save - wiki data is null");
         return;
       }
 
@@ -502,7 +513,6 @@ export default function EditorPage() {
         defaultAuthor: defaultAuthor // Save the default author
       };
 
-      console.log("🔍 SAVING PAGE: Wiki data prepared for saving");
 
       // Helper function to generate sidebar nav
       const generateSidebarNav = (pages: { [key: string]: WikiPage }): string => {
@@ -587,8 +597,6 @@ export default function EditorPage() {
       while ((match = tableIdRegex.exec(allContent)) !== null) {
         tableIds.push(match[1]);
       }
-
-      console.log(`🔍 SAVING PAGE: Found ${tableIds.length} tables in wiki content to save:`, tableIds);
 
       // First generate the HTML with iframe tables (for preview)
       const previewHtml = `<!DOCTYPE html>
@@ -686,28 +694,23 @@ export default function EditorPage() {
 
       // Fetch table data for all tables in the wiki
       if (tableIds.length > 0) {
-        console.log("🔍 SAVING PAGE: Fetching table data from frontend API");
         for (const tableId of tableIds) {
           try {
-            console.log(`🔍 SAVING PAGE: Fetching data for table ${tableId}`);
             const response = await fetch(`/api/tables/${tableId}`);
             if (response.ok) {
               const data = await response.json();
               tableData[tableId] = { data, style: data.style };
-              console.log(`🔍 SAVING PAGE: Successfully fetched data for table ${tableId}`, data);
             } else {
-              console.warn(`🔍 SAVING PAGE: Could not fetch data for table ${tableId}: ${response.status} - ${response.statusText}`);
+              console.warn(`Could not fetch data for table ${tableId}: ${response.status} - ${response.statusText}`);
             }
           } catch (error) {
-            console.error(`🔍 SAVING PAGE: Error fetching table data for ${tableId}:`, error);
+            console.error(`Error fetching table data for ${tableId}:`, error);
           }
         }
       }
 
-      console.log(`🔍 SAVING PAGE: Total tables with data: ${Object.keys(tableData).length}`);
 
       // Now convert tables to static HTML using the export-tables API
-      console.log("🔍 SAVING PAGE: Converting tables to static HTML");
       const exportResponse = await fetch('/api/export-tables', {
         method: 'POST',
         headers: {
@@ -719,20 +722,13 @@ export default function EditorPage() {
       });
 
       if (!exportResponse.ok) {
-        console.error('🔍 SAVING PAGE: Failed to convert tables:', await exportResponse.text());
+        console.error('Failed to convert tables:', await exportResponse.text());
         throw new Error('Failed to convert tables');
       }
 
       const { html: exportedHtml } = await exportResponse.json();
-      console.log("🔍 SAVING PAGE: Tables converted to static HTML");
 
       // Send the exported HTML with real tables to the server
-      console.log("🔍 SAVING PAGE: Sending data to backend server", {
-        htmlLength: exportedHtml.length,
-        cssLength: cssContent.length,
-        tableDataLength: Object.keys(tableData).length
-      });
-
       const saveResponse = await fetch(`http://localhost:3001/api/wiki/${encodedWikiName}`, {
         method: 'PUT',
         headers: {
@@ -748,14 +744,17 @@ export default function EditorPage() {
 
       if (!saveResponse.ok) {
         const errorText = await saveResponse.text();
-        console.error('🔍 SAVING PAGE: Failed to save wiki:', errorText);
+        console.error('Failed to save wiki:', errorText);
         throw new Error(`Failed to save wiki: ${errorText}`);
       }
 
-      console.log("🔍 SAVING PAGE: Wiki saved successfully with static HTML tables");
     } catch (error) {
-      console.error('🔍 SAVING PAGE: Error saving wiki:', error);
-      alert('Failed to save wiki. Please try again.');
+      console.error('Error saving wiki:', error);
+      setSaveErrorMessage('Failed to save wiki. Please try again.');
+      setSaveError(true);
+      
+      // Auto-hide the error after 5 seconds
+      setTimeout(() => setSaveError(false), 5000);
     } finally {
       setIsSaving(false);
     }
@@ -848,7 +847,7 @@ export default function EditorPage() {
     }
 
     // Continue with existing background color replacements
-// Continue with existing background color replacements
+    // Continue with existing background color replacements
     updatedCss = updatedCss
       .replace(/\.sidebar\s*{[^}]*background-color:[^;]+;/g, match =>
         match.replace(/background-color:[^;]+;/, `background-color: ${sidebarColor};`))
@@ -1098,11 +1097,8 @@ export default function EditorPage() {
 
   // Add a new page to the wiki
   const addNewPage = async () => {
-    console.log("Add Page clicked, wiki state:", wiki);
-    console.log("newPageName:", newPageName);
 
     if (!wiki || !newPageName.trim()) {
-      console.log("Early return condition met:", !wiki ? "wiki is null/undefined" : "newPageName is empty");
       return;
     }
 
@@ -1216,7 +1212,10 @@ export default function EditorPage() {
       saveWiki();
     } catch (error) {
       console.error('Error uploading logo:', error);
-      alert('Failed to upload logo. Please try again.');
+      setLogoUploadError('Failed to upload logo. Please try again.');
+      
+      // Auto-hide after 4 seconds
+      setTimeout(() => setLogoUploadError(''), 4000);
     }
   };
 
@@ -1733,7 +1732,10 @@ export default function EditorPage() {
       })
       .catch(error => {
         console.error('Error creating table:', error);
-        alert('Failed to create table. Please try again.');
+        setTableError('Failed to create table. Please try again.');
+        
+        // Auto-hide after 4 seconds
+        setTimeout(() => setTableError(''), 4000);
       });
 
     // Close the table creation modal
@@ -1743,8 +1745,6 @@ export default function EditorPage() {
   // Helper function to save table data
   const saveTableData = async (tableId: string, tableData: TableData, tableStyle: TableStyle) => {
     try {
-      console.log(`Saving table data for table ID: ${tableId}`);
-
       // Save table data
       const response = await fetch(`/api/tables/${tableId}`, {
         method: 'POST',
@@ -1762,14 +1762,10 @@ export default function EditorPage() {
         throw new Error(`Failed to save table data: ${response.status} - ${errorText}`);
       }
 
-      console.log('Table data saved successfully for ID:', tableId);
-
       // Verify the table data was saved by attempting to fetch it back
       try {
         const verifyResponse = await fetch(`/api/tables/${tableId}`);
-        if (verifyResponse.ok) {
-          console.log('Successfully verified table data was saved');
-        } else {
+        if (!verifyResponse.ok) {
           console.warn(`Table saved but verification failed: ${verifyResponse.status}`);
         }
       } catch (verifyError) {
@@ -1825,7 +1821,11 @@ export default function EditorPage() {
       setShowTableEditorModal(true);
     } catch (error) {
       console.error('Error fetching table data:', error);
-      alert('Error loading table editor. Please try again.');
+      setTableEditorError('Error loading table editor. Please try again.');
+      
+      // Show inline error message instead of modal
+      // Add a 3-second timeout to auto-dismiss
+      setTimeout(() => setTableEditorError(''), 3000);
     }
   }, []); // Empty dependencies array since we don't use any external values
 
@@ -1855,8 +1855,6 @@ export default function EditorPage() {
 
     // Add the global function to edit tables
     const editTableFunction = (tableId: string, e?: MouseEvent) => {
-      console.log('Edit button clicked for table', tableId);
-
       // Prevent default behavior and stop propagation
       if (e) {
         e.preventDefault();
@@ -1961,7 +1959,10 @@ export default function EditorPage() {
       return fullImageUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      setImageUploadError('Failed to upload image. Please try again.');
+      
+      // Auto-hide after 4 seconds
+      setTimeout(() => setImageUploadError(''), 4000);
       return '';
     }
   };
@@ -2196,6 +2197,31 @@ export default function EditorPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
+      {/* Error toast notifications */}
+      {isErrorVisible && (
+        <div className="fixed top-4 right-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md z-50">
+          {errorMessage}
+        </div>
+      )}
+      
+      {saveError && (
+        <div className="fixed bottom-4 right-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md flex items-center z-50">
+          <span>{saveErrorMessage}</span>
+          <button 
+            onClick={() => setSaveError(false)} 
+            className="ml-3 text-red-500 hover:text-red-700"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      
+      {tableEditorError && (
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-md shadow-lg border border-red-300 z-50">
+          <p className="text-red-600">{tableEditorError}</p>
+        </div>
+      )}
+      
       {/* Add global styles for the editor */}
       <style jsx global>{`
         .editor-content a {
@@ -3116,17 +3142,18 @@ export default function EditorPage() {
                             >
                               ↓
                             </button>
-                            <button
-                              onClick={() => {
-                                // Edit page function
-                                // Open modal with page details for editing
-                                // For now, we'll just focus on adding this UI component
-                                alert('Edit page functionality coming soon');
-                              }}
-                              className="p-2 text-green-600 hover:bg-green-100 rounded"
-                              title="Edit Page"
+                            <button 
+                              disabled
+                              className="p-2 text-gray-500 bg-gray-100 rounded relative group cursor-not-allowed"
+                              title="This feature is coming soon"
                             >
-                              ✎
+                              <span className="flex items-center">
+                                Edit Page
+                                <span className="ml-1 text-xs px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded-full">Soon</span>
+                              </span>
+                              <div className="absolute z-10 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-sm bg-gray-900 text-white rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
+                                Edit page functionality coming soon
+                              </div>
                             </button>
                             <button
                               onClick={async () => {
@@ -3334,6 +3361,11 @@ export default function EditorPage() {
                           onChange={handleLogoUpload}
                           className="border p-1 rounded"
                         />
+                        {logoUploadError && (
+                          <p className="text-red-500 text-sm mt-1">
+                            {logoUploadError}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -3602,6 +3634,13 @@ export default function EditorPage() {
                   </table>
                 </div>
               </div>
+              
+              {/* Display table error message */}
+              {tableError && (
+                <div className="mt-2 text-red-500 text-sm p-2 bg-red-50 rounded border border-red-200">
+                  {tableError}
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end space-x-3 mt-6">
@@ -3909,6 +3948,13 @@ export default function EditorPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Show image upload error */}
+      {showImageUpload && imageUploadError && (
+        <div className="mt-2 bg-red-50 text-red-600 p-2 rounded-md border border-red-200 text-sm absolute top-20 right-4 z-50">
+          {imageUploadError}
         </div>
       )}
     </div>

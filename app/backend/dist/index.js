@@ -22,7 +22,5 @@ app.use('/wikis', express_1.default.static(wikiDir));
 // Routes
 app.use('/api/wiki', wiki_1.default);
 // Start server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT);
 exports.default = app;

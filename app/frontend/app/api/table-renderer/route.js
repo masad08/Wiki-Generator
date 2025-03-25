@@ -15,8 +15,6 @@ export async function GET(request) {
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || `${protocol}://${host}`;
     
-    console.log(`Fetching table data from: ${baseUrl}/api/tables/${tableId}`);
-    
     const response = await fetch(`${baseUrl}/api/tables/${tableId}`);
     
     if (!response.ok) {

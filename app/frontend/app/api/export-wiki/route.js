@@ -10,7 +10,6 @@ function ensureDataDirectory() {
   try {
     if (!fs.existsSync(TABLES_DIR)) {
       fs.mkdirSync(TABLES_DIR, { recursive: true });
-      console.log(`Created directory: ${TABLES_DIR}`);
     }
   } catch (error) {
     console.error(`Error creating tables directory: ${error.message}`);
@@ -36,27 +35,15 @@ async function tableJsonToHtml(tableId) {
     
     // Decode the table ID from URL encoding
     const decodedTableId = decodeURIComponent(tableId);
-    console.log(`Looking for decoded table ID: ${decodedTableId}`);
     
     // Check if table data exists
     const dataPath = path.join(TABLES_DIR, `${decodedTableId}.json`);
     const stylePath = path.join(TABLES_DIR, `${decodedTableId}_style.json`);
     
-    console.log(`Looking for table data at: ${dataPath}`);
-    console.log(`Looking for table style at: ${stylePath}`);
     
     if (!fs.existsSync(dataPath) || !fs.existsSync(stylePath)) {
+      // Log critical error but remove excessive debug logs
       console.error(`Table data not found for ${decodedTableId}`);
-      console.error(`Data file exists: ${fs.existsSync(dataPath)}`);
-      console.error(`Style file exists: ${fs.existsSync(stylePath)}`);
-      
-      // List all files in the tables directory
-      try {
-        const files = fs.readdirSync(TABLES_DIR);
-        console.log(`Files in tables directory: ${files.join(', ')}`);
-      } catch (dirError) {
-        console.error(`Error reading tables directory: ${dirError.message}`);
-      }
       
       return `<div class="table-error">Table data not found</div>`;
     }
@@ -93,7 +80,7 @@ async function tableJsonToHtml(tableId) {
     
     return tableHtml;
   } catch (error) {
-    console.error(`Error converting table ${decodedTableId} to HTML:`, error);
+    console.error(`Error converting table to HTML:`, error);
     return `<div class="table-error">Error loading table</div>`;
   }
 }

@@ -10,7 +10,6 @@ function ensureDataDirectory() {
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
-      console.log(`Created directory: ${DATA_DIR}`);
     }
   } catch (error) {
     console.error(`Error creating tables directory: ${error.message}`);
@@ -31,9 +30,6 @@ export async function GET(request, { params }) {
     const dataPath = path.join(DATA_DIR, `${decodedTableId}.json`);
     const stylePath = path.join(DATA_DIR, `${decodedTableId}_style.json`);
     
-    console.log(`Looking for table files with decoded ID: ${decodedTableId}`);
-    console.log(`Data path: ${dataPath}`);
-    console.log(`Style path: ${stylePath}`);
     
     if (!fs.existsSync(dataPath) || !fs.existsSync(stylePath)) {
       return NextResponse.json({ error: 'Table not found' }, { status: 404 });
@@ -70,10 +66,6 @@ export async function POST(request, { params }) {
     // Write data to files
     const dataPath = path.join(DATA_DIR, `${decodedTableId}.json`);
     const stylePath = path.join(DATA_DIR, `${decodedTableId}_style.json`);
-    
-    console.log(`Saving table files with decoded ID: ${decodedTableId}`);
-    console.log(`Data path: ${dataPath}`);
-    console.log(`Style path: ${stylePath}`);
     
     fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
     fs.writeFileSync(stylePath, JSON.stringify(style, null, 2));

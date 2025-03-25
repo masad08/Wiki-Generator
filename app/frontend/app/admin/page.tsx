@@ -15,6 +15,22 @@ export default function AdminPage() {
   const [newWikiAuthor, setNewWikiAuthor] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
+  
+  // Add error notification states
+  const [errorNotification, setErrorNotification] = useState('');
+  const [errorType, setErrorType] = useState<'create' | 'delete' | 'export' | ''>('');
+
+  // Function to show error notification
+  const showError = (message: string, type: 'create' | 'delete' | 'export') => {
+    setErrorNotification(message);
+    setErrorType(type);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+      setErrorNotification('');
+      setErrorType('');
+    }, 5000);
+  };
 
   // Fetch wikis from the API
   const fetchWikis = async () => {
@@ -25,6 +41,7 @@ export default function AdminPage() {
       setWikis(data);
     } catch (error) {
       console.error('Error fetching wikis:', error);
+      showError('Failed to fetch wikis. Please refresh the page.', 'create');
     } finally {
       setLoading(false);
     }
@@ -55,11 +72,11 @@ export default function AdminPage() {
         fetchWikis();
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error}`);
+        showError(`Error: ${error.error}`, 'create');
       }
     } catch (error) {
       console.error('Error creating wiki:', error);
-      alert('Failed to create wiki. Please try again.');
+      showError('Failed to create wiki. Please try again.', 'create');
     } finally {
       setIsCreating(false);
     }
@@ -76,11 +93,11 @@ export default function AdminPage() {
         fetchWikis();
       } else {
         const error = await response.json();
-        alert(`Error: ${error.error}`);
+        showError(`Error: ${error.error}`, 'delete');
       }
     } catch (error) {
       console.error('Error deleting wiki:', error);
-      alert('Failed to delete wiki. Please try again.');
+      showError('Failed to delete wiki. Please try again.', 'delete');
     } finally {
       setDeleteConfirmation(null);
     }
@@ -95,7 +112,7 @@ export default function AdminPage() {
       window.open(endpoint, '_blank');
     } catch (error) {
       console.error('Error exporting wiki:', error);
-      alert('Failed to export wiki. Please try again.');
+      showError('Failed to export wiki. Please try again.', 'export');
     }
   };
 
@@ -111,6 +128,33 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Error Notification */}
+      {errorNotification && (
+        <div className={`fixed z-50 top-4 right-4 p-4 rounded shadow-lg border-l-4 max-w-md transition-opacity duration-300 ${
+          errorType === 'create' ? 'bg-red-100 border-red-500 text-red-700' :
+          errorType === 'delete' ? 'bg-orange-100 border-orange-500 text-orange-700' :
+          'bg-yellow-100 border-yellow-500 text-yellow-700'
+        }`}>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <span>{errorNotification}</span>
+            </div>
+            <button 
+              onClick={() => {
+                setErrorNotification('');
+                setErrorType('');
+              }} 
+              className="text-red-600 hover:text-red-800 ml-4"
+            >
+              &times;
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">

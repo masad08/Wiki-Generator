@@ -20,15 +20,12 @@ const TableEditor: React.FC<TableEditorProps> = ({ onClose, editorRef, onContent
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Initialize the editor with the first table in the editor
-  useEffect(() => {
-    console.log('TableEditor component mounted');
-    
+  useEffect(() => {    
     // Find the first table in the editor content
     if (editorRef.current) {
       const tables = editorRef.current.querySelectorAll('table');
       if (tables.length > 0) {
         const firstTable = tables[0] as HTMLTableElement;
-        console.log('Found table in editor, selecting it');
         setSelectedTable(firstTable);
         
         // Position the editor panel near the table
@@ -57,7 +54,6 @@ const TableEditor: React.FC<TableEditorProps> = ({ onClose, editorRef, onContent
           top = Math.max(10, viewportHeight - 310);
         }
         
-        console.log(`Positioning editor at top: ${top}, left: ${left}`);
         setPosition({
           top,
           left
@@ -69,7 +65,6 @@ const TableEditor: React.FC<TableEditorProps> = ({ onClose, editorRef, onContent
     const handleOutsideClick = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node) && 
           (!selectedTable || !selectedTable.contains(e.target as Node))) {
-        console.log('Clicked outside table, closing editor');
         onClose();
       }
     };
@@ -77,7 +72,6 @@ const TableEditor: React.FC<TableEditorProps> = ({ onClose, editorRef, onContent
     document.addEventListener('mousedown', handleOutsideClick);
     
     return () => {
-      console.log('TableEditor unmounting, removing event listeners');
       document.removeEventListener('mousedown', handleOutsideClick);
     };
   }, [editorRef, onClose]);
@@ -350,11 +344,8 @@ const TableEditor: React.FC<TableEditorProps> = ({ onClose, editorRef, onContent
 
   // If no table is selected, don't render the editor
   if (!selectedTable) {
-    console.log('No table selected, not rendering editor');
     return null;
   }
-
-  console.log('Rendering table editor UI');
 
   return (
     <div 
