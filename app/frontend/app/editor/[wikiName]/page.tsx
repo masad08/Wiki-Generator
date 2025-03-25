@@ -14,7 +14,7 @@ interface WikiPage {
   tags: string[];
   createdAt: string;
   modifiedAt: string;
-  author: string;
+  author?: string; // Make author optional
   order: number;
 }
 
@@ -24,6 +24,7 @@ interface Wiki {
   tags: Set<string>;
   createdAt: string;
   modifiedAt: string;
+  defaultAuthor?: string; // Optional default author
 }
 
 // Add interfaces for table data
@@ -108,6 +109,8 @@ export default function EditorPage() {
   const [textDefaultColor, setTextDefaultColor] = useState('#333333');
   const [textPrimaryColor, setTextPrimaryColor] = useState('#111827');
   const [textSecondaryColor, setTextSecondaryColor] = useState('#4b5563');
+
+  const [defaultAuthor, setDefaultAuthor] = useState(''); // Add this line
 
   const convertHtmlTablesToIframes = async (html: string): Promise<string> => {
     // Find all wiki-table elements
@@ -287,141 +290,198 @@ export default function EditorPage() {
   };
 
   // Fetch wiki content
- // Fetch wiki content
-useEffect(() => {
-  const fetchWiki = async () => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/wiki/${encodedWikiName}`);
+  useEffect(() => {
+    const fetchWiki = async () => {
+      try {
+        const response = await fetch(`http://localhost:3001/api/wiki/${encodedWikiName}`);
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch wiki');
+        if (!response.ok) {
+          throw new Error('Failed to fetch wiki');
+        }
+
+        const html = await response.text();
+
+        // Try multiple patterns to extract wiki data
+        const wikiDataMatch = html.match(/window\.wikiData\s*=\s*([\s\S]*?);<\/script>/) ||
+          html.match(/<script>[\s\S]*?window\.wikiData\s*=\s*([\s\S]*?);<\/script>/) ||
+          html.match(/<script[\s\S]*?>[\s\S]*?window\.wikiData\s*=\s*([\s\S]*?);<\/script>/);
+
+        if (wikiDataMatch && wikiDataMatch[1]) {
+          try {
+            const parsedData = JSON.parse(wikiDataMatch[1]);
+
+            // Fix the data structure - ensure tags is a Set object
+            const wikiData = {
+              ...parsedData,
+              tags: new Set(parsedData.tags || [])
+            };
+
+            setWiki(wikiData);
+            setAvailableTags(new Set(wikiData.tags));
+
+            // Check if there's a default author in the wiki data
+            if (wikiData.defaultAuthor) {
+              setDefaultAuthor(wikiData.defaultAuthor);
+            }
+
+            console.log("Wiki data loaded:", wikiData);
+
+            // After loading wiki data, convert any HTML tables back to iframes for editing
+            const processedHtml = await convertHtmlTablesToIframes(html);
+            setHtmlContent(processedHtml);
+          } catch (jsonError) {
+            console.error("Error parsing wiki data JSON:", jsonError);
+            initializeDefaultWiki(html);
+          }
+        } else {
+          console.error("Could not find window.wikiData in HTML");
+          initializeDefaultWiki(html);
+        }
+
+        // Extract CSS from the HTML
+        const cssMatch = html.match(/<style>([\s\S]*?)<\/style>/);
+        if (cssMatch && cssMatch[1]) {
+          setCssContent(cssMatch[1]);
+
+          // Extract sidebar color
+          const sidebarColorMatch = cssMatch[1].match(/\.sidebar\s*{[^}]*background-color:\s*([^;]+)/);
+          if (sidebarColorMatch && sidebarColorMatch[1]) {
+            setSidebarColor(sidebarColorMatch[1].trim());
+          }
+
+          // Extract main content color
+          const mainColorMatch = cssMatch[1].match(/\.main-content\s*{[^}]*background-color:\s*([^;]+)/);
+          if (mainColorMatch && mainColorMatch[1]) {
+            setMainColor(mainColorMatch[1].trim());
+          }
+
+          // Extract text default color
+          const textDefaultColorMatch = cssMatch[1].match(/--text-default:\s*([^;]+)/);
+          if (textDefaultColorMatch && textDefaultColorMatch[1]) {
+            setTextDefaultColor(textDefaultColorMatch[1].trim());
+          }
+
+          // Extract text primary color
+          const textPrimaryColorMatch = cssMatch[1].match(/--text-primary:\s*([^;]+)/);
+          if (textPrimaryColorMatch && textPrimaryColorMatch[1]) {
+            setTextPrimaryColor(textPrimaryColorMatch[1].trim());
+          }
+
+          // Extract text secondary color
+          const textSecondaryColorMatch = cssMatch[1].match(/--text-secondary:\s*([^;]+)/);
+          if (textSecondaryColorMatch && textSecondaryColorMatch[1]) {
+            setTextSecondaryColor(textSecondaryColorMatch[1].trim());
+          }
+
+          // Alternative approach if the CSS variables aren't found - extract from specific selectors
+          if (!textDefaultColorMatch) {
+            const pageContentColorMatch = cssMatch[1].match(/\.page-content\s*{[^}]*color:\s*([^;]+)/);
+            if (pageContentColorMatch && pageContentColorMatch[1]) {
+              setTextDefaultColor(pageContentColorMatch[1].trim());
+            } else {
+              // Default fallback
+              setTextDefaultColor('#333333');
+            }
+          }
+
+          if (!textPrimaryColorMatch) {
+            const headingColorMatch = cssMatch[1].match(/\.page-header h1\s*{[^}]*color:\s*([^;]+)/);
+            if (headingColorMatch && headingColorMatch[1]) {
+              setTextPrimaryColor(headingColorMatch[1].trim());
+            } else {
+              // Default fallback
+              setTextPrimaryColor('#111827');
+            }
+          }
+
+          if (!textSecondaryColorMatch) {
+            const metadataColorMatch = cssMatch[1].match(/\.page-info\s*{[^}]*color:\s*([^;]+)/);
+            if (metadataColorMatch && metadataColorMatch[1]) {
+              setTextSecondaryColor(metadataColorMatch[1].trim());
+            } else {
+              // Default fallback
+              setTextSecondaryColor('#4b5563');
+            }
+          }
+        }
+
+        // Extract footer text
+        const footerMatch = html.match(/<footer[^>]*>([\s\S]*?)<\/footer>/);
+        if (footerMatch && footerMatch[1]) {
+          setFooterText(footerMatch[1].trim());
+        }
+
+        // Extract logo URL
+        const logoMatch = html.match(/<img[^>]*src="([^"]+)"[^>]*class="logo"/);
+        if (logoMatch && logoMatch[1]) {
+          setLogoUrl(logoMatch[1]);
+        }
+      } catch (error) {
+        console.error('Error fetching wiki:', error);
+        alert('Failed to load wiki. Redirecting to admin panel.');
+        router.push('/admin');
+      }
+    };
+
+    // Helper function to initialize a default wiki when data can't be parsed from HTML
+    const initializeDefaultWiki = (html: string) => {
+      // Try to extract wiki name from title or h1 tag if available
+      let extractedWikiName = wikiName;
+      const titleMatch = html.match(/<title>(.*?)<\/title>/);
+      if (titleMatch && titleMatch[1]) {
+        extractedWikiName = titleMatch[1];
       }
 
-      const html = await response.text();
+      // Create minimal wiki structure
+      const defaultWiki = {
+        name: extractedWikiName,
+        pages: {},
+        tags: new Set<string>(),
+        createdAt: new Date().toISOString(),
+        modifiedAt: new Date().toISOString()
+      };
 
-      // Extract wiki data first
-      const wikiDataMatch = html.match(/window\.wikiData = ([\s\S]*?);<\/script>/);
-      if (wikiDataMatch && wikiDataMatch[1]) {
-        const parsedData = JSON.parse(wikiDataMatch[1]);
-
-        // Fix the data structure - ensure tags is a Set object
-        const wikiData = {
-          ...parsedData,
-          tags: new Set(parsedData.tags || [])
+      // Try to extract any content from the HTML
+      const contentMatch = html.match(/<div[^>]*class="page-content"[^>]*>([\s\S]*?)<\/div>/);
+      if (contentMatch && contentMatch[1]) {
+        // Create an initial page using extracted content
+        defaultWiki.pages = {
+          introduction: {
+            id: 'introduction',
+            title: 'Introduction',
+            content: contentMatch[1] || 'Welcome to your wiki. Edit this content to get started.',
+            parentId: null,
+            children: [],
+            tags: [],
+            createdAt: new Date().toISOString(),
+            modifiedAt: new Date().toISOString(),
+            order: 0
+          }
         };
-
-        setWiki(wikiData);
-        setAvailableTags(new Set(wikiData.tags));
-        console.log("Wiki data loaded:", wikiData);
-
-        // After loading wiki data, convert any HTML tables back to iframes for editing
-        const processedHtml = await convertHtmlTablesToIframes(html);
-        setHtmlContent(processedHtml);
       } else {
-        console.error("Could not find window.wikiData in HTML");
-
-        // Initialize minimal wiki structure instead of showing error
-        const defaultWiki = {
-          name: wikiName,
-          pages: {},
-          tags: new Set<string>(),
-          createdAt: new Date().toISOString(),
-          modifiedAt: new Date().toISOString()
+        // Create a blank initial page
+        defaultWiki.pages = {
+          introduction: {
+            id: 'introduction',
+            title: 'Introduction',
+            content: 'Welcome to your wiki. Edit this content to get started.',
+            parentId: null,
+            children: [],
+            tags: [],
+            createdAt: new Date().toISOString(),
+            modifiedAt: new Date().toISOString(),
+            order: 0
+          }
         };
-
-        setWiki(defaultWiki);
-        setHtmlContent(html);
-        console.log("Created default wiki structure:", defaultWiki);
       }
 
-      // Extract CSS from the HTML
-      const cssMatch = html.match(/<style>([\s\S]*?)<\/style>/);
-      if (cssMatch && cssMatch[1]) {
-        setCssContent(cssMatch[1]);
+      setWiki(defaultWiki);
+      setHtmlContent(html);
+      console.log("Created default wiki structure:", defaultWiki);
+    };
 
-        // Extract sidebar color
-        const sidebarColorMatch = cssMatch[1].match(/\.sidebar\s*{[^}]*background-color:\s*([^;]+)/);
-        if (sidebarColorMatch && sidebarColorMatch[1]) {
-          setSidebarColor(sidebarColorMatch[1].trim());
-        }
-
-        // Extract main content color
-        const mainColorMatch = cssMatch[1].match(/\.main-content\s*{[^}]*background-color:\s*([^;]+)/);
-        if (mainColorMatch && mainColorMatch[1]) {
-          setMainColor(mainColorMatch[1].trim());
-        }
-
-        // Extract text default color
-        const textDefaultColorMatch = cssMatch[1].match(/--text-default:\s*([^;]+)/);
-        if (textDefaultColorMatch && textDefaultColorMatch[1]) {
-          setTextDefaultColor(textDefaultColorMatch[1].trim());
-        }
-
-        // Extract text primary color
-        const textPrimaryColorMatch = cssMatch[1].match(/--text-primary:\s*([^;]+)/);
-        if (textPrimaryColorMatch && textPrimaryColorMatch[1]) {
-          setTextPrimaryColor(textPrimaryColorMatch[1].trim());
-        }
-
-        // Extract text secondary color
-        const textSecondaryColorMatch = cssMatch[1].match(/--text-secondary:\s*([^;]+)/);
-        if (textSecondaryColorMatch && textSecondaryColorMatch[1]) {
-          setTextSecondaryColor(textSecondaryColorMatch[1].trim());
-        }
-
-        // Alternative approach if the CSS variables aren't found - extract from specific selectors
-        if (!textDefaultColorMatch) {
-          const pageContentColorMatch = cssMatch[1].match(/\.page-content\s*{[^}]*color:\s*([^;]+)/);
-          if (pageContentColorMatch && pageContentColorMatch[1]) {
-            setTextDefaultColor(pageContentColorMatch[1].trim());
-          } else {
-            // Default fallback
-            setTextDefaultColor('#333333');
-          }
-        }
-
-        if (!textPrimaryColorMatch) {
-          const headingColorMatch = cssMatch[1].match(/\.page-header h1\s*{[^}]*color:\s*([^;]+)/);
-          if (headingColorMatch && headingColorMatch[1]) {
-            setTextPrimaryColor(headingColorMatch[1].trim());
-          } else {
-            // Default fallback
-            setTextPrimaryColor('#111827');
-          }
-        }
-
-        if (!textSecondaryColorMatch) {
-          const metadataColorMatch = cssMatch[1].match(/\.page-info\s*{[^}]*color:\s*([^;]+)/);
-          if (metadataColorMatch && metadataColorMatch[1]) {
-            setTextSecondaryColor(metadataColorMatch[1].trim());
-          } else {
-            // Default fallback
-            setTextSecondaryColor('#4b5563');
-          }
-        }
-      }
-
-      // Extract footer text
-      const footerMatch = html.match(/<footer[^>]*>([\s\S]*?)<\/footer>/);
-      if (footerMatch && footerMatch[1]) {
-        setFooterText(footerMatch[1].trim());
-      }
-
-      // Extract logo URL
-      const logoMatch = html.match(/<img[^>]*src="([^"]+)"[^>]*class="logo"/);
-      if (logoMatch && logoMatch[1]) {
-        setLogoUrl(logoMatch[1]);
-      }
-    } catch (error) {
-      console.error('Error fetching wiki:', error);
-      alert('Failed to load wiki. Redirecting to admin panel.');
-      router.push('/admin');
-    }
-  };
-
-  fetchWiki();
-}, [encodedWikiName, router, wikiName]);
-  
+    fetchWiki();
+  }, [encodedWikiName, router, wikiName]);
 
   // Save wiki content
   const saveWiki = async () => {
@@ -438,7 +498,8 @@ useEffect(() => {
       const wikiDataToSave = {
         ...wiki,
         tags: Array.from(wiki.tags),
-        logoUrl: logoUrl
+        logoUrl: logoUrl,
+        defaultAuthor: defaultAuthor // Save the default author
       };
 
       console.log("🔍 SAVING PAGE: Wiki data prepared for saving");
@@ -505,7 +566,7 @@ useEffect(() => {
                   <div class="page-info">
                     Created: ${new Date(page.createdAt).toLocaleDateString()}
                     | Last modified: ${new Date(page.modifiedAt).toLocaleDateString()}
-                    | Author: ${page.author}
+                    ${page.author ? `| Author: ${page.author}` : ''}
                   </div>
                 </div>
               </div>
@@ -550,7 +611,10 @@ useEffect(() => {
         ${generateTagsSection(wiki.tags)}
     </div>
     <div class="main-content">
-        ${generatePageContent(wiki.pages)}
+        <div class="content-wrapper">
+            ${generatePageContent(wiki.pages)}
+        </div>
+        ${footerText ? `<footer class="wiki-footer">${footerText}</footer>` : ''}
     </div>
     <script>
       // Page navigation functionality for editor preview
@@ -698,117 +762,122 @@ useEffect(() => {
   };
 
   // Update CSS with new settings
-// Update CSS with new settings
-const updateCss = async () => {
-  // Add logo styles to the CSS
-  const logoStyles = `
-  .sidebar-logo {
-    padding: 1rem;
-    text-align: center;
-    margin-bottom: 1rem;
-  }
-  .sidebar-logo img {
-    max-width: 80%;
-    height: auto;
-    border-radius: 4px;
-  }`;
-
-  // Add explicit text styling for wiki content
-  const textStyles = `
-  /* Main content default text */
-  .page-content {
-    color: ${textPrimaryColor};
-  }
-  
-  /* Main content headers - primary color */
-  .page-header h1,
-  .page-content h1, 
-  .page-content h2, 
-  .page-content h3, 
-  .page-content h4, 
-  .page-content h5, 
-  .page-content h6 {
-    color: ${textPrimaryColor};
-  }
-  
-  /* All sidebar text including title and tags section - default color */
-  .sidebar-title,
-  .sidebar-nav a,
-  .sidebar-nav li,
-  .wiki-tags h3,
-  .sidebar .wiki-tags {
-    color: ${textDefaultColor};
-  }
-  
-  /* Secondary color for metadata, logs, tags and footer */
-  .page-info,
-  .page-metadata,
-  .page-content .metadata,
-  .page-content .description,
-  .page-content small,
-  .tag,
-  footer {
-    color: ${textSecondaryColor};
-  }
-  `;
-
-  // Check if CSS variables exist, and add them if they don't
-  let updatedCss = cssContent;
-  
-  // Replace existing CSS variables if they exist
-  if (updatedCss.includes('--text-default:')) {
-    updatedCss = updatedCss.replace(/--text-default:[^;]+;/, `--text-default: ${textDefaultColor};`);
-  } else {
-    // Add CSS variable if it doesn't exist
-    updatedCss = `:root {\n  --text-default: ${textDefaultColor};\n` + updatedCss;
-  }
-  
-  if (updatedCss.includes('--text-primary:')) {
-    updatedCss = updatedCss.replace(/--text-primary:[^;]+;/, `--text-primary: ${textPrimaryColor};`);
-  } else if (updatedCss.includes(':root {')) {
-    // Add to existing root
-    updatedCss = updatedCss.replace(/:root {/, `:root {\n  --text-primary: ${textPrimaryColor};`);
-  } else {
-    // Add new root
-    updatedCss = `:root {\n  --text-primary: ${textPrimaryColor};\n` + updatedCss;
-  }
-  
-  if (updatedCss.includes('--text-secondary:')) {
-    updatedCss = updatedCss.replace(/--text-secondary:[^;]+;/, `--text-secondary: ${textSecondaryColor};`);
-  } else if (updatedCss.includes(':root {')) {
-    // Add to existing root
-    updatedCss = updatedCss.replace(/:root {/, `:root {\n  --text-secondary: ${textSecondaryColor};`);
-  } else {
-    // Add new root
-    updatedCss = `:root {\n  --text-secondary: ${textSecondaryColor};\n` + updatedCss;
-  }
-  
-  // Continue with existing background color replacements
-  updatedCss = updatedCss
-    .replace(/\.sidebar\s*{[^}]*background-color:[^;]+;/g, match =>
-      match.replace(/background-color:[^;]+;/, `background-color: ${sidebarColor};`))
-    .replace(/\.main-content\s*{[^}]*background-color:[^;]+;/g, match =>
-      match.replace(/background-color:[^;]+;/, `background-color: ${mainColor};`))
-    .replace(/--bg-primary:[^;]+;/, `--bg-primary: ${mainColor};`)
-    + logoStyles
-    + textStyles;
-
-  setCssContent(updatedCss);
-
-  // Update the HTML with the new CSS
-  if (wiki) {
-    try {
-      const htmlWithCss = await generateWikiHtml(wiki);
-      setHtmlContent(htmlWithCss);
-    } catch (error) {
-      console.error("Error generating wiki HTML:", error);
+  const updateCss = async () => {
+    // Add logo styles to the CSS
+    const logoStyles = `
+    .sidebar-logo {
+      padding: 1rem;
+      text-align: center;
+      margin-bottom: 1rem;
     }
-  }
+    .sidebar-logo img {
+      max-width: 80%;
+      height: auto;
+      border-radius: 4px;
+    }`;
 
-  // Save the changes
-  await saveWiki();
-};
+    // Add explicit text styling for wiki content
+    const textStyles = `
+    /* Main content default text */
+    .page-content {
+      color: ${textPrimaryColor};
+    }
+    
+    /* Main content headers - primary color */
+    .page-header h1,
+    .page-content h1, 
+    .page-content h2, 
+    .page-content h3, 
+    .page-content h4, 
+    .page-content h5, 
+    .page-content h6 {
+      color: ${textPrimaryColor};
+    }
+    
+    /* All sidebar text including title and tags section - default color */
+    .sidebar-title,
+    .sidebar-nav a,
+    .sidebar-nav li,
+    .wiki-tags h3,
+    .sidebar .wiki-tags {
+      color: ${textDefaultColor};
+    }
+    
+    /* Secondary color for metadata, logs, tags and footer */
 
+    .page-info,
+    .page-metadata,
+    .page-content .metadata,
+    .page-content .description,
+    .page-content small,
+    .tag,
+    .wiki-footer,
+    .page-info { /* This targets the author/logging line */
+      color: ${textSecondaryColor} !important;
+    }
+    `;
+
+    // Check if CSS variables exist, and add them if they don't
+    let updatedCss = cssContent;
+
+
+
+
+    if (updatedCss.includes(':root {')) {
+      // If root exists, check for each variable and add or update them
+      if (updatedCss.includes('--text-primary:')) {
+        updatedCss = updatedCss.replace(/--text-primary:[^;]+;/, `--text-primary: ${textPrimaryColor};`);
+      } else {
+        updatedCss = updatedCss.replace(/:root {/, `:root {\n  --text-primary: ${textPrimaryColor};`);
+      }
+
+      if (updatedCss.includes('--text-secondary:')) {
+        updatedCss = updatedCss.replace(/--text-secondary:[^;]+;/, `--text-secondary: ${textSecondaryColor};`);
+      } else {
+        updatedCss = updatedCss.replace(/:root {/, `:root {\n  --text-secondary: ${textSecondaryColor};`);
+      }
+
+      if (updatedCss.includes('--text-default:')) {
+        updatedCss = updatedCss.replace(/--text-default:[^;]+;/, `--text-default: ${textDefaultColor};`);
+      } else {
+        updatedCss = updatedCss.replace(/:root {/, `:root {\n  --text-default: ${textDefaultColor};`);
+      }
+    } else {
+      // If no root exists, create one with all variables
+      updatedCss = `:root {\n  --text-primary: ${textPrimaryColor};\n  --text-secondary: ${textSecondaryColor};\n  --text-default: ${textDefaultColor};\n}\n` + updatedCss;
+    }
+
+    // Continue with existing background color replacements
+// Continue with existing background color replacements
+    updatedCss = updatedCss
+      .replace(/\.sidebar\s*{[^}]*background-color:[^;]+;/g, match =>
+        match.replace(/background-color:[^;]+;/, `background-color: ${sidebarColor};`))
+      .replace(/\.main-content\s*{[^}]*background-color:[^;]+;/g, match =>
+        match.replace(/background-color:[^;]+;/, `background-color: ${mainColor};`))
+      .replace(/--bg-primary:[^;]+;/, `--bg-primary: ${mainColor};`)
+      // Add the new replacements right here
+      .replace(/\.wiki-footer\s*{[^}]*color:[^;]+;/g, match =>
+        match.replace(/color:[^;]+;/, `color: ${textSecondaryColor};`))
+      .replace(/\.page-info\s*{[^}]*color:[^;]+;/g, match =>
+        match.replace(/color:[^;]+;/, `color: ${textSecondaryColor};`))
+      + logoStyles
+      + textStyles;
+
+    setCssContent(updatedCss);
+
+    // Update the HTML with the new CSS
+    if (wiki) {
+      try {
+        const htmlWithCss = await generateWikiHtml(wiki);
+        setHtmlContent(htmlWithCss);
+      } catch (error) {
+        console.error("Error generating wiki HTML:", error);
+      }
+    }
+
+    // Save the changes
+    await saveWiki();
+  };
 
   // Modified generateWikiHtml to handle tables correctly
   const generateWikiHtml = async (wikiData: Wiki): Promise<string> => {
@@ -871,7 +940,7 @@ const updateCss = async () => {
                 <div class="page-info">
                   Created: ${new Date(page.createdAt).toLocaleDateString()}
                   | Last modified: ${new Date(page.modifiedAt).toLocaleDateString()}
-                  | Author: ${page.author}
+                  ${page.author ? `| Author: ${page.author}` : ''}
                 </div>
               </div>
             </div>
@@ -884,29 +953,51 @@ const updateCss = async () => {
     };
 
     // Main HTML template
+    // Modified HTML template in the generateWikiHtml function
     const htmlTemplate = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${wikiData.name}</title>
-    <style>${cssContent}</style>
+    <style>
+      ${cssContent}
+      body {
+        background-color: white;
+        margin: 0;
+        padding: 0;
+      }
+.wiki-wrapper {
+  display: flex;
+  max-width: 1200px; /* you can adjust this width */
+  margin-left: auto;
+  margin-right: auto;
+  justify-content: center;
+  width: fit-content;
+}
+    </style>
     <script>window.wikiData = ${JSON.stringify({
       ...wikiData,
       tags: Array.from(wikiData.tags)
     })};</script>
 </head>
 <body>
-    <div class="sidebar">
-        ${logoUrl ? `<div class="sidebar-logo"><img src="${logoUrl}" alt="Wiki Logo" style="max-width: 100%; height: auto;"/></div>` : ''}
-        <div class="sidebar-title">${wikiData.name}</div>
-        <ul class="sidebar-nav">
-            ${generateSidebarNav(wikiData.pages)}
-        </ul>
-        ${generateTagsSection(wikiData.tags)}
-    </div>
-    <div class="main-content">
-        ${generatePageContent(wikiData.pages)}
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1000; background-color: white;"></div>
+    <div class="wiki-wrapper">
+        <div class="sidebar">
+            ${logoUrl ? `<div class="sidebar-logo"><img src="${logoUrl}" alt="Wiki Logo" style="max-width: 100%; height: auto;"/></div>` : ''}
+            <div class="sidebar-title">${wikiData.name}</div>
+            <ul class="sidebar-nav">
+                ${generateSidebarNav(wikiData.pages)}
+            </ul>
+            ${generateTagsSection(wikiData.tags)}
+        </div>
+        <div class="main-content">
+            <div class="content-wrapper">
+                ${generatePageContent(wikiData.pages)}
+            </div>
+            ${footerText ? `<footer class="wiki-footer">${footerText}</footer>` : ''}
+        </div>
     </div>
     <script>
       // Page navigation functionality
@@ -1028,7 +1119,7 @@ const updateCss = async () => {
       tags: [],
       createdAt: new Date().toISOString(),
       modifiedAt: new Date().toISOString(),
-      author: 'User',
+      author: defaultAuthor || undefined, // Only set author if there's a default author
       order: Object.keys(wiki.pages).length
     };
 
@@ -1135,14 +1226,14 @@ const updateCss = async () => {
     if (htmlContent.includes('<footer')) {
       const updatedHtml = htmlContent.replace(
         /<footer[^>]*>([\s\S]*?)<\/footer>/,
-        `<footer class="mt-12 py-5 text-center border-t border-gray-200 text-gray-500">${footerText}</footer>`
+        `<footer class="wiki-footer">${footerText}</footer>`
       );
       setHtmlContent(updatedHtml);
     } else {
-      // Add footer before closing body tag
+      // Add footer before closing main-content div
       const updatedHtml = htmlContent.replace(
-        /<\/body>/,
-        `<footer class="mt-12 py-5 text-center border-t border-gray-200 text-gray-500">${footerText}</footer>\n</body>`
+        /<\/div>\s*<\/body>/,
+        `  <footer class="wiki-footer">${footerText}</footer>\n  </div>\n</body>`
       );
       setHtmlContent(updatedHtml);
     }
@@ -1350,7 +1441,8 @@ const updateCss = async () => {
     updatedWiki.pages[editingPageId] = {
       ...updatedWiki.pages[editingPageId],
       content: content,
-      modifiedAt: new Date().toISOString()
+      modifiedAt: new Date().toISOString(),
+      author: defaultAuthor || undefined // Update author to current default author
     };
 
     setWiki(updatedWiki);
@@ -2008,41 +2100,49 @@ const updateCss = async () => {
     }
   };
 
-// Add this useEffect
-// Combined useEffect for background and text colors
-useEffect(() => {
-  // Store a reference to the current editor element
-  const editorElement = contentEditableRef.current;
-  
-  // Function to reapply background color after events - moved outside the conditional
-  const handleEditorEvents = () => {
-    setTimeout(() => {
-      if (editorElement) {
-        editorElement.style.setProperty('background-color', mainColor, 'important');
-        editorElement.style.setProperty('color', textPrimaryColor, 'important'); // Add this line
+  // Add this useEffect
+  // Combined useEffect for background and text colors
+  // Modify the existing useEffect that handles editor background and text colors
+  useEffect(() => {
+    // Store a reference to the current editor element
+    const editorElement = contentEditableRef.current;
+
+    // Function to reapply background color after events
+    const handleEditorEvents = () => {
+      setTimeout(() => {
+        if (editorElement) {
+          editorElement.style.setProperty('background-color', mainColor, 'important');
+          editorElement.style.setProperty('color', textPrimaryColor, 'important'); // Add this line
+        }
+      }, 10);
+    };
+
+    if (editorElement && editingPageId) {
+      // Apply main component background color directly with !important
+      editorElement.style.setProperty('background-color', mainColor, 'important');
+
+      // Apply default text color
+      editorElement.style.setProperty('color', textPrimaryColor, 'important');
+
+      // Create or update style tag for more specific text styling
+      const styleId = 'editor-color-styles';
+      let styleTag = document.getElementById(styleId);
+
+      if (!styleTag) {
+        styleTag = document.createElement('style');
+        styleTag.id = styleId;
+        document.head.appendChild(styleTag);
       }
-    }, 10);
-  };
-  
-  if (editorElement && editingPageId) {
-    // Apply background color directly
-    editorElement.style.setProperty('background-color', mainColor, 'important');
-    
-    // Apply default text color
-    editorElement.style.setProperty('color', textPrimaryColor, 'important');
-    
-    // Create or update style tag for more specific text styling
-    const styleId = 'editor-color-styles';
-    let styleTag = document.getElementById(styleId);
-    
-    if (!styleTag) {
-      styleTag = document.createElement('style');
-      styleTag.id = styleId;
-      document.head.appendChild(styleTag);
-    }
-    
-    // Define CSS rules for text colors that won't override manual styling
-    styleTag.innerHTML = `
+
+      // Add specific rule for the editor to ensure it uses main color
+      styleTag.innerHTML = `
+      /* Force editor background to use main color */
+      .editor-content, 
+      [contenteditable="true"],
+      [data-ms-editor="true"] {
+        background-color: ${mainColor} !important;
+      }
+      
       /* Apply primary text color to headings that don't have inline styles */
       .editor-content h1:not([style*="color"]),
       .editor-content h2:not([style*="color"]),
@@ -2060,34 +2160,39 @@ useEffect(() => {
         color: ${textSecondaryColor} !important;
       }
     `;
-    
-    // Add event listeners
-    editorElement.addEventListener('focus', handleEditorEvents);
-    editorElement.addEventListener('blur', handleEditorEvents);
-    editorElement.addEventListener('input', handleEditorEvents);
-    editorElement.addEventListener('keyup', handleEditorEvents);
-    editorElement.addEventListener('mouseup', handleEditorEvents);
-  }
-  
-  // Cleanup function
-  return () => {
-    if (editorElement) {
-      // Remove event listeners
-      editorElement.removeEventListener('focus', handleEditorEvents);
-      editorElement.removeEventListener('blur', handleEditorEvents);
-      editorElement.removeEventListener('input', handleEditorEvents);
-      editorElement.removeEventListener('keyup', handleEditorEvents);
-      editorElement.removeEventListener('mouseup', handleEditorEvents);
-    }
-    
-    // Remove style tag
-    const styleTag = document.getElementById('editor-color-styles');
-    if (styleTag) {
-      styleTag.remove();
-    }
-  };
-}, [mainColor, textDefaultColor, textPrimaryColor, textSecondaryColor, editingPageId]);
 
+      // Add event listeners to ensure styling persists
+      editorElement.addEventListener('focus', handleEditorEvents);
+      editorElement.addEventListener('blur', handleEditorEvents);
+      editorElement.addEventListener('input', handleEditorEvents);
+      editorElement.addEventListener('keyup', handleEditorEvents);
+      editorElement.addEventListener('mouseup', handleEditorEvents);
+    }
+
+    // Cleanup function
+    return () => {
+      if (editorElement) {
+        // Remove event listeners
+        editorElement.removeEventListener('focus', handleEditorEvents);
+        editorElement.removeEventListener('blur', handleEditorEvents);
+        editorElement.removeEventListener('input', handleEditorEvents);
+        editorElement.removeEventListener('keyup', handleEditorEvents);
+        editorElement.removeEventListener('mouseup', handleEditorEvents);
+      }
+
+      // Remove style tag
+      const styleTag = document.getElementById('editor-color-styles');
+      if (styleTag) {
+        styleTag.remove();
+      }
+    };
+  }, [mainColor, textDefaultColor, textPrimaryColor, textSecondaryColor, editingPageId]);
+
+  // Add function to update default author
+  const updateDefaultAuthor = () => {
+    if (!wiki) return;
+    saveWiki();
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -2874,7 +2979,7 @@ useEffect(() => {
                 >
                   Add Page
                 </button>
-                
+
               </div>
               <div className="p-4">
                 {wiki && wiki.pages && Object.keys(wiki.pages).length > 0 ? (
@@ -2901,33 +3006,55 @@ useEffect(() => {
                           <div className="flex space-x-2">
                             <button
                               onClick={async () => {
-                                // Move page up in order
+                                // Move page up in order, but only among siblings at the same level
                                 if (index > 0) {
                                   const updatedWiki = { ...wiki };
                                   const currentPage = { ...page };
-                                  const prevPage = { ...array[index - 1] };
 
-                                  // Swap orders
-                                  const tempOrder = currentPage.order;
-                                  currentPage.order = prevPage.order;
-                                  prevPage.order = tempOrder;
+                                  // Find the previous sibling (same parent or both at root)
+                                  let prevSiblingIndex = -1;
+                                  for (let i = index - 1; i >= 0; i--) {
+                                    if ((currentPage.parentId === null && array[i].parentId === null) ||
+                                      (currentPage.parentId !== null && array[i].parentId === currentPage.parentId)) {
+                                      prevSiblingIndex = i;
+                                      break;
+                                    }
+                                  }
 
-                                  // Update pages in wiki
-                                  updatedWiki.pages[currentPage.id] = currentPage;
-                                  updatedWiki.pages[prevPage.id] = prevPage;
+                                  // If a valid previous sibling was found
+                                  if (prevSiblingIndex >= 0) {
+                                    const prevSibling = { ...array[prevSiblingIndex] };
 
-                                  setWiki(updatedWiki);
+                                    // Swap orders
+                                    const tempOrder = currentPage.order;
+                                    currentPage.order = prevSibling.order;
+                                    prevSibling.order = tempOrder;
 
-                                  // Generate updated HTML
-                                  const updatedHtml = await generateWikiHtml(updatedWiki);
-                                  setHtmlContent(updatedHtml);
+                                    // Update pages in wiki
+                                    updatedWiki.pages[currentPage.id] = currentPage;
+                                    updatedWiki.pages[prevSibling.id] = prevSibling;
 
-                                  // Save changes
-                                  saveWiki();
+                                    setWiki(updatedWiki);
+
+                                    // Generate updated HTML
+                                    const updatedHtml = await generateWikiHtml(updatedWiki);
+                                    setHtmlContent(updatedHtml);
+
+                                    // Save changes
+                                    saveWiki();
+                                  }
                                 }
                               }}
-                              disabled={index === 0}
-                              className={`p-2 rounded ${index === 0 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'
+                              disabled={index === 0 || !array.slice(0, index).some(p =>
+                                (page.parentId === null && p.parentId === null) ||
+                                (page.parentId !== null && p.parentId === page.parentId)
+                              )}
+                              className={`p-2 rounded ${index === 0 || !array.slice(0, index).some(p =>
+                                (page.parentId === null && p.parentId === null) ||
+                                (page.parentId !== null && p.parentId === page.parentId)
+                              )
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-blue-600 hover:bg-blue-100'
                                 }`}
                               title="Move Up"
                             >
@@ -2935,33 +3062,55 @@ useEffect(() => {
                             </button>
                             <button
                               onClick={async () => {
-                                // Move page down in order
+                                // Move page down in order, but only among siblings at the same level
                                 if (index < array.length - 1) {
                                   const updatedWiki = { ...wiki };
                                   const currentPage = { ...page };
-                                  const nextPage = { ...array[index + 1] };
 
-                                  // Swap orders
-                                  const tempOrder = currentPage.order;
-                                  currentPage.order = nextPage.order;
-                                  nextPage.order = tempOrder;
+                                  // Find the next sibling (same parent or both at root)
+                                  let nextSiblingIndex = -1;
+                                  for (let i = index + 1; i < array.length; i++) {
+                                    if ((currentPage.parentId === null && array[i].parentId === null) ||
+                                      (currentPage.parentId !== null && array[i].parentId === currentPage.parentId)) {
+                                      nextSiblingIndex = i;
+                                      break;
+                                    }
+                                  }
 
-                                  // Update pages in wiki
-                                  updatedWiki.pages[currentPage.id] = currentPage;
-                                  updatedWiki.pages[nextPage.id] = nextPage;
+                                  // If a valid next sibling was found
+                                  if (nextSiblingIndex >= 0) {
+                                    const nextSibling = { ...array[nextSiblingIndex] };
 
-                                  setWiki(updatedWiki);
+                                    // Swap orders
+                                    const tempOrder = currentPage.order;
+                                    currentPage.order = nextSibling.order;
+                                    nextSibling.order = tempOrder;
 
-                                  // Generate updated HTML
-                                  const updatedHtml = await generateWikiHtml(updatedWiki);
-                                  setHtmlContent(updatedHtml);
+                                    // Update pages in wiki
+                                    updatedWiki.pages[currentPage.id] = currentPage;
+                                    updatedWiki.pages[nextSibling.id] = nextSibling;
 
-                                  // Save changes
-                                  saveWiki();
+                                    setWiki(updatedWiki);
+
+                                    // Generate updated HTML
+                                    const updatedHtml = await generateWikiHtml(updatedWiki);
+                                    setHtmlContent(updatedHtml);
+
+                                    // Save changes
+                                    saveWiki();
+                                  }
                                 }
                               }}
-                              disabled={index === array.length - 1}
-                              className={`p-2 rounded ${index === array.length - 1 ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-100'
+                              disabled={index === array.length - 1 || !array.slice(index + 1).some(p =>
+                                (page.parentId === null && p.parentId === null) ||
+                                (page.parentId !== null && p.parentId === page.parentId)
+                              )}
+                              className={`p-2 rounded ${index === array.length - 1 || !array.slice(index + 1).some(p =>
+                                (page.parentId === null && p.parentId === null) ||
+                                (page.parentId !== null && p.parentId === page.parentId)
+                              )
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-blue-600 hover:bg-blue-100'
                                 }`}
                               title="Move Down"
                             >
@@ -3204,6 +3353,30 @@ useEffect(() => {
                       >
                         Update Footer
                       </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Default Author
+                      </label>
+                      <div className="flex">
+                        <input
+                          type="text"
+                          value={defaultAuthor}
+                          onChange={(e) => setDefaultAuthor(e.target.value)}
+                          placeholder="Enter default author name"
+                          className="w-full p-2 border rounded-l"
+                        />
+                        <button
+                          onClick={updateDefaultAuthor}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-md shadow-sm font-medium"
+                        >
+                          Save
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">
+                        This author name will be used for new pages. If empty, &quot;User&quot; will be used.
+                      </p>
                     </div>
                   </div>
                 </div>

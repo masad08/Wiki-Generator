@@ -9,8 +9,9 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+
 
 // Create created_wikis directory if it doesn't exist
 const wikiDir = path.join(__dirname, '../../..', 'created_wikis');

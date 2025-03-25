@@ -16,7 +16,7 @@ interface WikiPage {
   tags: string[];
   createdAt: string;
   modifiedAt: string;
-  author: string;
+  author?: string;
   order: number;
 }
 
@@ -26,6 +26,7 @@ interface Wiki {
   tags: Set<string>;
   createdAt: string;
   modifiedAt: string;
+  defaultAuthor?: string;
 }
 
 // Interface for table data
@@ -111,12 +112,22 @@ body {
 }
 
 .main-content {
-    margin-left: 180px;
+    margin-left: 230px; /* Adjusted to account for sidebar width + padding */
     padding: 2rem 4rem;
     max-width: 900px;
     background-color: var(--bg-primary);
     min-height: 100vh;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    display: flex;          /* Enable flex layout */
+    flex-direction: column; /* Stack children vertically */
+    overflow: hidden;       /* Prevent overall overflow */
+}
+
+/* Content wrapper for scrollable content */
+.content-wrapper {
+    flex: 1;               /* Take all available space */
+    overflow-y: auto;      /* Add vertical scrollbar when needed */
+    padding-bottom: 1rem;  /* Space before footer */
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -358,20 +369,54 @@ img {
     font-style: italic;
 }
 
-.wiki-page {
-    margin-bottom: 3rem;
-}
-
 /* Hide all wiki pages by default */
 .wiki-page {
     display: none;
+}
+
+.wiki-page {
+    display: none;         /* Hidden by default, shown via JS */
+    max-width: 100%;       /* Prevent horizontal overflow */
+}
+
+/* Improved image handling to prevent overflow */
+.wiki-page img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Handle tables to prevent overflow */
+.wiki-page table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+.wiki-footer {
+    margin-top: auto;      /* Push to bottom of flex container */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-top: 1px solid var(--bg-secondary);
+    color: var(--text-secondary); /* Same as logging text */
+    font-size: 0.875rem;
+    text-align: center;
+    flex-shrink: 0;        /* Prevent footer from shrinking */
+}
+
+.wiki-wrapper {
+  display: flex;
+  max-width: 1200px; /* adjust this width as needed */
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
 }
 `;
 
 // Create a new wiki
 export const createWiki = async (req: Request, res: Response) => {
   try {
-    const { wikiName } = req.body;
+    const { wikiName, defaultAuthor } = req.body;
     
     if (!wikiName) {
       return res.status(400).json({ error: 'Wiki name is required' });
@@ -389,13 +434,28 @@ export const createWiki = async (req: Request, res: Response) => {
     await fs.ensureDir(wikiDir);
     await fs.ensureDir(path.join(wikiDir, 'images'));
     
-    // Create empty wiki structure with no hardcoded pages
+    // Create initial page
+    const initialPage: WikiPage = {
+      id: 'introduction',
+      title: 'Introduction',
+      content: 'Welcome to your new wiki! Edit this content to get started.',
+      parentId: null,
+      children: [],
+      tags: [],
+      createdAt: new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+      author: defaultAuthor || undefined, // Use defaultAuthor if provided, otherwise undefined
+      order: 0
+    };
+    
+    // Create wiki structure with initial page
     const wiki: Wiki = {
       name: wikiName,
-      pages: {}, // Empty pages object
-      tags: new Set<string>(), // Empty tags set
+      pages: { 'introduction': initialPage },
+      tags: new Set([]),
       createdAt: new Date().toISOString(),
-      modifiedAt: new Date().toISOString()
+      modifiedAt: new Date().toISOString(),
+      defaultAuthor
     };
     
     // Save wiki structure to a JSON file
@@ -563,7 +623,7 @@ const generateWikiTemplate = (wiki: Wiki): string => {
               <div class="page-info">
                 Created: ${new Date(page.createdAt).toLocaleDateString()}
                 | Last modified: ${new Date(page.modifiedAt).toLocaleDateString()}
-                | Author: ${page.author}
+                ${page.author ? `| Author: ${page.author}` : ''}
               </div>
             </div>
           </div>
@@ -581,17 +641,43 @@ const generateWikiTemplate = (wiki: Wiki): string => {
     tags: Array.from(wiki.tags)
   };
 
-  return `<!DOCTYPE html>
+  // Create properly formatted JSON for the script tag
+  const wikiDataJson = JSON.stringify(serializableWiki);
+
+return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${wikiName}</title>
-    <style>${defaultCss}</style>
-    <script>window.wikiData = ${JSON.stringify(serializableWiki)};</script>
+    <style>
+      ${defaultCss}
+      body {
+        background-color: white;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+      }
+      
+      .sidebar {
+        position: static;
+        width: 250px;
+      }
+      
+      .main-content {
+        width: 950px;
+        margin-left: 0;
+      }
+    </style>
+    <script>
+      window.wikiData = ${wikiDataJson};
+    </script>
 </head>
 <body>
-    <div class="sidebar">
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1000; background-color: white;"></div>
+<div class="wiki-wrapper">    
+<div class="sidebar">
         <div class="sidebar-title">${wikiName}</div>
         <ul class="sidebar-nav">
             ${generateSidebarNav(wiki.pages)}
@@ -599,8 +685,14 @@ const generateWikiTemplate = (wiki: Wiki): string => {
         ${generateTagsSection(wiki.tags)}
     </div>
     <div class="main-content">
-        ${generatePageContent(wiki.pages)}
+        <div class="content-wrapper">
+            ${generatePageContent(wiki.pages)}
+        </div>
+        <footer class="wiki-footer">
+            ${wiki.name} © ${new Date().getFullYear()}
+        </footer>
     </div>
+</div>
     <script>
       // Page navigation functionality
       document.addEventListener('DOMContentLoaded', function() {
@@ -960,16 +1052,117 @@ export const exportWiki = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Wiki not found' });
     }
     
-    // Create a zip archive
-    const zipPath = path.join(wikisDir, `${wikiName}.zip`);
+    // Create a temporary directory
+    const tempDir = path.join(wikisDir, `${wikiName}_temp_export_${Date.now()}`);
+    await fs.ensureDir(tempDir);
+    
+    try {
+      // Copy all wiki files to temp directory
+      await fs.copy(wikiDir, tempDir);
+      
+      // Modify only the HTML file in the temp directory to fix image paths
+      const tempHtmlPath = path.join(tempDir, 'index.html');
+      if (await fs.pathExists(tempHtmlPath)) {
+        let htmlContent = await fs.readFile(tempHtmlPath, 'utf8');
+        
+        // Fix image paths to be relative
+        htmlContent = htmlContent.replace(
+          /src=["'](https?:\/\/[^\/]+)?\/api\/wiki\/[^\/]+\/images\/([^"']+)["']/g,
+          'src="images/$2"'
+        );
+        
+        await fs.writeFile(tempHtmlPath, htmlContent, 'utf8');
+      }
+      
+      // Create zip from the temp directory
+      const zipPath = path.join(wikisDir, `${wikiName}.zip`);
+      const output = fs.createWriteStream(zipPath);
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      
+      archive.pipe(output);
+      archive.directory(tempDir, wikiName);
+      await archive.finalize();
+      
+      // When zip is done
+      output.on('close', async () => {
+        // Clean up temp directory
+        await fs.remove(tempDir);
+        
+        // Download the zip
+        res.download(zipPath, `${wikiName}.zip`, (err) => {
+          if (err) {
+            console.error('Error downloading zip:', err);
+            return res.status(500).json({ error: 'Failed to download wiki export' });
+          }
+          
+          // Clean up zip after download
+          fs.remove(zipPath).catch(err => console.error('Error deleting zip file:', err));
+        });
+      });
+    } catch (error) {
+      // Clean up temp directory on error
+      await fs.remove(tempDir);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error exporting wiki:', error);
+    res.status(500).json({ error: 'Failed to export wiki' });
+  }
+};
+
+// Export wiki as a single HTML file
+export const exportWikiSingleHtml = async (req: Request, res: Response) => {
+  try {
+    const wikiName = decodeURIComponent(req.params.wikiName);
+    const wikiDir = path.join(wikisDir, wikiName);
+    
+    // Check if wiki exists
+    if (!await fs.pathExists(wikiDir)) {
+      return res.status(404).json({ error: 'Wiki not found' });
+    }
+    
+    // Read the required wiki files
+    const htmlPath = path.join(wikiDir, 'index.html');
+    const cssPath = path.join(wikiDir, 'styles.css');
+    const jsonPath = path.join(wikiDir, 'wiki-data.json');
+    const imagesDir = path.join(wikiDir, 'images');
+    
+    if (!(await fs.pathExists(htmlPath)) || 
+        !(await fs.pathExists(cssPath)) || 
+        !(await fs.pathExists(jsonPath))) {
+      return res.status(404).json({ error: 'Required wiki files not found' });
+    }
+    
+    // Read the file contents
+    const htmlContent = await fs.readFile(htmlPath, 'utf8');
+    const cssContent = await fs.readFile(cssPath, 'utf8');
+    const jsonContent = await fs.readFile(jsonPath, 'utf8');
+    
+    // Parse wiki data
+    const wikiData = JSON.parse(jsonContent);
+    
+    // Create a single HTML with embedded CSS and JS
+    const singleHtmlContent = generateSingleHtmlExport(htmlContent, cssContent, wikiData);
+    
+    // Create temporary file for the single HTML
+    const singleHtmlPath = path.join(wikisDir, `${wikiName}_single.html`);
+    await fs.writeFile(singleHtmlPath, singleHtmlContent, 'utf8');
+    
+    // Create a zip archive for the single HTML and images
+    const zipPath = path.join(wikisDir, `${wikiName}_single.zip`);
     const output = fs.createWriteStream(zipPath);
     const archive = archiver('zip', { zlib: { level: 9 } });
     
     // Pipe archive to output file
     archive.pipe(output);
     
-    // Add all wiki files to the archive
-    archive.directory(wikiDir, wikiName);
+    // Add the single HTML file to the archive
+    archive.file(singleHtmlPath, { name: `${wikiName}.html` });
+    
+    // Add images directory if it exists
+    if (await fs.pathExists(imagesDir)) {
+      archive.directory(imagesDir, 'images');
+    }
     
     // Finalize archive
     await archive.finalize();
@@ -977,19 +1170,67 @@ export const exportWiki = async (req: Request, res: Response) => {
     // Wait for the output stream to finish
     output.on('close', () => {
       // Set headers for file download
-      res.download(zipPath, `${wikiName}.zip`, (err) => {
+      res.download(zipPath, `${wikiName}_single_html.zip`, (err) => {
         if (err) {
-          console.error('Error downloading zip:', err);
-          return res.status(500).json({ error: 'Failed to download wiki export' });
+          console.error('Error downloading single HTML zip:', err);
+          return res.status(500).json({ error: 'Failed to download single HTML export' });
         }
-        
-        // Clean up the zip file after download
+        // Clean up the zip and single HTML files after download
         fs.remove(zipPath).catch(err => console.error('Error deleting zip file:', err));
+        fs.remove(singleHtmlPath).catch(err => console.error('Error deleting single HTML file:', err));
       });
     });
   } catch (error) {
-    console.error('Error exporting wiki:', error);
-    res.status(500).json({ error: 'Failed to export wiki' });
+    console.error('Error exporting wiki as single HTML:', error);
+    res.status(500).json({ error: 'Failed to export wiki as single HTML' });
+  }
+};
+
+// Helper function to generate a single HTML file with embedded CSS and JS
+const generateSingleHtmlExport = (html: string, css: string, wikiData: any): string => {
+  try {
+    // Process the HTML to embed CSS and JS
+    let singleHtml = html;
+    
+    // Replace external CSS link with embedded CSS
+    singleHtml = singleHtml.replace(
+      /<link[^>]*href=["'][^"']*\.css["'][^>]*>/i,
+      `<style>\n${css}\n</style>`
+    );
+    
+    // Replace external script with embedded script
+    singleHtml = singleHtml.replace(
+      /<script[^>]*src=["'][^"']*\.js["'][^>]*><\/script>/i,
+      ''
+    );
+    
+    // Ensure the wiki data is embedded
+    if (!singleHtml.includes('window.wikiData')) {
+      // Add wiki data script before closing body tag
+      const wikiDataScript = `<script>window.wikiData = ${JSON.stringify(wikiData)};</script>`;
+      singleHtml = singleHtml.replace('</body>', `${wikiDataScript}\n</body>`);
+    }
+    
+    // Fix image paths for local usage - the key fix we need
+    singleHtml = singleHtml.replace(
+      /src=["'](https?:\/\/[^\/]+)?\/api\/wiki\/[^\/]+\/images\/([^"']+)["']/g,
+      'src="images/$2"'
+    );
+    
+    // Add additional meta information
+    const exportInfoComment = `<!--
+  This wiki was exported as a single HTML file on ${new Date().toISOString()}
+  Original wiki name: ${wikiData.name}
+  Created with Wiki Generator
+-->`;
+    
+    singleHtml = singleHtml.replace('<!DOCTYPE html>', `<!DOCTYPE html>\n${exportInfoComment}`);
+    
+    return singleHtml;
+  }
+  catch (error) {
+    console.error('Error generating single HTML export:', error);
+    throw error;
   }
 };
 

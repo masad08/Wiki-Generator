@@ -31,6 +31,7 @@ router.get('/:wikiName', wikiController_1.getWiki);
 router.put('/:wikiName', wikiController_1.updateWiki);
 router.delete('/:wikiName', wikiController_1.deleteWiki);
 router.get('/:wikiName/export', wikiController_1.exportWiki);
+router.get('/:wikiName/export-single-html', wikiController_1.exportWikiSingleHtml);
 // Image routes
 router.post('/:wikiName/upload', upload.single('image'), wikiController_1.uploadImage);
 router.get('/:wikiName/images/:filename', wikiController_1.serveImage);

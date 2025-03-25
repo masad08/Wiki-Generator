@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { createWiki, getWikis, getWiki, updateWiki, deleteWiki, exportWiki, uploadImage, serveImage } from '../controllers/wikiController';
+import { createWiki, getWikis, getWiki, updateWiki, deleteWiki, exportWiki, uploadImage, serveImage, exportWikiSingleHtml } from '../controllers/wikiController';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs-extra';
@@ -30,6 +30,7 @@ router.get('/:wikiName', getWiki as express.RequestHandler);
 router.put('/:wikiName', updateWiki as express.RequestHandler);
 router.delete('/:wikiName', deleteWiki as express.RequestHandler);
 router.get('/:wikiName/export', exportWiki as express.RequestHandler);
+router.get('/:wikiName/export-single-html', exportWikiSingleHtml as express.RequestHandler);
 
 // Image routes
 router.post('/:wikiName/upload', upload.single('image'), uploadImage as express.RequestHandler);

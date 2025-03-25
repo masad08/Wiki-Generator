@@ -6,7 +6,7 @@
     --sidebar-hover: #374151;
     --text-primary: #111827;
     --text-secondary: #4b5563;
-    --bg-primary: #761e1e;
+    --bg-primary: #ffffff;
     --bg-secondary: #f9fafb;
 }
 
@@ -22,7 +22,7 @@ body {
 
 .sidebar {
     width: 180px;
-    background-color: #141414;
+    background-color: var(--sidebar-bg);
     color: #fff;
     padding: 1.25rem;
     position: fixed;
@@ -66,13 +66,30 @@ body {
     transform: translateX(4px);
 }
 
+.sidebar-nav a.active {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateX(4px);
+    font-weight: 500;
+}
+
 .main-content {
-    margin-left: 180px;
+    margin-left: 230px; /* Adjusted to account for sidebar width + padding */
     padding: 2rem 4rem;
     max-width: 900px;
-    background-color: #761e1e;
+    background-color: var(--bg-primary);
     min-height: 100vh;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    display: flex;          /* Enable flex layout */
+    flex-direction: column; /* Stack children vertically */
+    overflow: hidden;       /* Prevent overall overflow */
+}
+
+/* Content wrapper for scrollable content */
+.content-wrapper {
+    flex: 1;               /* Take all available space */
+    overflow-y: auto;      /* Add vertical scrollbar when needed */
+    padding-bottom: 1rem;  /* Space before footer */
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -314,77 +331,37 @@ img {
     font-style: italic;
 }
 
+/* Hide all wiki pages by default */
 .wiki-page {
-    margin-bottom: 3rem;
+    display: none;
 }
 
-    .sidebar-logo {
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .sidebar-logo img {
-      max-width: 80%;
-      height: auto;
-      border-radius: 4px;
-    }
-    .sidebar-logo {
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .sidebar-logo img {
-      max-width: 80%;
-      height: auto;
-      border-radius: 4px;
-    }
-    .sidebar-logo {
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .sidebar-logo img {
-      max-width: 80%;
-      height: auto;
-      border-radius: 4px;
-    }
-    .sidebar-logo {
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .sidebar-logo img {
-      max-width: 80%;
-      height: auto;
-      border-radius: 4px;
-    }
-    .sidebar-logo {
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .sidebar-logo img {
-      max-width: 80%;
-      height: auto;
-      border-radius: 4px;
-    }
-    .sidebar-logo {
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .sidebar-logo img {
-      max-width: 80%;
-      height: auto;
-      border-radius: 4px;
-    }
-    .sidebar-logo {
-      padding: 1rem;
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    .sidebar-logo img {
-      max-width: 80%;
-      height: auto;
-      border-radius: 4px;
-    }
+.wiki-page {
+    display: none;         /* Hidden by default, shown via JS */
+    max-width: 100%;       /* Prevent horizontal overflow */
+}
+
+/* Improved image handling to prevent overflow */
+.wiki-page img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Handle tables to prevent overflow */
+.wiki-page table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+.wiki-footer {
+    margin-top: auto;      /* Push to bottom of flex container */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-top: 1px solid var(--bg-secondary);
+    color: var(--text-secondary); /* Same as logging text */
+    font-size: 0.875rem;
+    text-align: center;
+    flex-shrink: 0;        /* Prevent footer from shrinking */
+}

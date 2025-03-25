@@ -1,0 +1,21 @@
+{
+  "name": "3",
+  "pages": {
+    "introduction": {
+      "id": "introduction",
+      "title": "Introduction",
+      "content": "\n            Welcome to your new wiki! Edit this content to get started.\n          ",
+      "parentId": null,
+      "children": [],
+      "tags": [],
+      "createdAt": "2025-03-24T14:08:41.142Z",
+      "modifiedAt": "2025-03-24T14:08:41.142Z",
+      "order": 0
+    }
+  },
+  "tags": [],
+  "createdAt": "2025-03-24T14:08:41.142Z",
+  "modifiedAt": "2025-03-24T14:08:41.142Z",
+  "logoUrl": "",
+  "defaultAuthor": ""
+}

@@ -1,4 +1,10 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3</title>
+    <style>
 :root {
     --primary-color: #2563eb;
     --primary-hover: #1d4ed8;
@@ -66,13 +72,30 @@ body {
     transform: translateX(4px);
 }
 
+.sidebar-nav a.active {
+    background-color: var(--primary-color);
+    color: white;
+    transform: translateX(4px);
+    font-weight: 500;
+}
+
 .main-content {
-    margin-left: 180px;
+    margin-left: 230px; /* Adjusted to account for sidebar width + padding */
     padding: 2rem 4rem;
     max-width: 900px;
     background-color: var(--bg-primary);
     min-height: 100vh;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    display: flex;          /* Enable flex layout */
+    flex-direction: column; /* Stack children vertically */
+    overflow: hidden;       /* Prevent overall overflow */
+}
+
+/* Content wrapper for scrollable content */
+.content-wrapper {
+    flex: 1;               /* Take all available space */
+    overflow-y: auto;      /* Add vertical scrollbar when needed */
+    padding-bottom: 1rem;  /* Space before footer */
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -314,6 +337,148 @@ img {
     font-style: italic;
 }
 
+/* Hide all wiki pages by default */
 .wiki-page {
-    margin-bottom: 3rem;
+    display: none;
 }
+
+.wiki-page {
+    display: none;         /* Hidden by default, shown via JS */
+    max-width: 100%;       /* Prevent horizontal overflow */
+}
+
+/* Improved image handling to prevent overflow */
+.wiki-page img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Handle tables to prevent overflow */
+.wiki-page table {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+.wiki-footer {
+    margin-top: auto;      /* Push to bottom of flex container */
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    border-top: 1px solid var(--bg-secondary);
+    color: var(--text-secondary); /* Same as logging text */
+    font-size: 0.875rem;
+    text-align: center;
+    flex-shrink: 0;        /* Prevent footer from shrinking */
+}
+</style>
+    <script>window.wikiData = {"name":"3","pages":{"introduction":{"id":"introduction","title":"Introduction","content":"\n            Welcome to your new wiki! Edit this content to get started.\n          ","parentId":null,"children":[],"tags":[],"createdAt":"2025-03-24T14:08:41.142Z","modifiedAt":"2025-03-24T14:08:41.142Z","order":0}},"tags":[],"createdAt":"2025-03-24T14:08:41.142Z","modifiedAt":"2025-03-24T14:08:41.142Z","logoUrl":"","defaultAuthor":""};</script>
+</head>
+<body>
+    <div class="sidebar">
+        
+
+        <div class="sidebar-title">3</div>
+        <ul class="sidebar-nav">
+            <li>
+            <div class="page-link">
+              <a href="#introduction" data-page-id="introduction">
+                Introduction
+              </a>
+              
+            </div></li>
+        </ul>
+        
+          <div class="wiki-tags">
+            <h3>Tags</h3>
+            <div class="tags-cloud">
+              
+            </div>
+          </div>
+    </div>
+    <div class="main-content">
+        <div class="content-wrapper">
+            
+            <div id="introduction" class="wiki-page">
+              <div class="page-header">
+                <h1>Introduction</h1>
+                <div class="page-metadata">
+                  <div class="page-tags">
+                    
+                  </div>
+                  <div class="page-info">
+                    Created: 24/03/2025
+                    | Last modified: 24/03/2025
+                    
+                  </div>
+                </div>
+              </div>
+              <div class="page-content">
+                
+            Welcome to your new wiki! Edit this content to get started.
+          
+              </div>
+            </div>
+          
+        </div>
+        <footer class="wiki-footer">3 © 2025</footer>
+    </div>
+    <script>
+      // Page navigation functionality for editor preview
+      document.addEventListener('DOMContentLoaded', function() {
+        // Get all page elements
+        const pages = document.querySelectorAll('.wiki-page');
+        // Get all nav links
+        const navLinks = document.querySelectorAll('.sidebar-nav a');
+        
+        // Function to show a specific page
+        function showPage(pageId) {
+          // Hide all pages
+          pages.forEach(page => {
+            page.style.display = 'none';
+          });
+          
+          // Show the selected page
+          const selectedPage = document.getElementById(pageId);
+          if (selectedPage) {
+            selectedPage.style.display = 'block';
+          }
+          
+          // Update active state in sidebar
+          navLinks.forEach(link => {
+            if (link.getAttribute('href') === '#' + pageId) {
+              link.classList.add('active');
+            } else {
+              link.classList.remove('active');
+            }
+          });
+          
+          // Store current page in session storage
+          sessionStorage.setItem('currentPage', pageId);
+        }
+        
+        // Add click handlers to all nav links
+        navLinks.forEach(link => {
+          link.addEventListener('click', function(e) {
+            const pageId = this.getAttribute('href').substring(1);
+            showPage(pageId);
+          });
+        });
+        
+        // Show the page from URL hash, stored page, or first page
+        const hash = window.location.hash.substring(1);
+        const storedPage = sessionStorage.getItem('currentPage');
+        
+        if (hash && document.getElementById(hash)) {
+          showPage(hash);
+        } else if (storedPage && document.getElementById(storedPage)) {
+          showPage(storedPage);
+        } else if (pages.length > 0) {
+          // Show first page by default
+          const firstPageId = pages[0].id;
+          showPage(firstPageId);
+        }
+      });
+    </script>
+</body>
+</html>

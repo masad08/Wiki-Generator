@@ -1,21 +1,32 @@
 {
   "name": "2",
   "pages": {
-    "1": {
-      "id": "1",
-      "title": "1",
-      "content": "Edit this section to add content.<div><br></div><div>hi</div><div><br></div><div><br></div>",
+    "introduction": {
+      "id": "introduction",
+      "title": "Introduction",
+      "content": "\n            Welcome to your new wiki! Edit this content to get started.\n          ",
       "parentId": null,
       "children": [],
       "tags": [],
-      "createdAt": "2025-03-22T08:30:13.816Z",
-      "modifiedAt": "2025-03-22T11:25:20.343Z",
-      "author": "User",
+      "createdAt": "2025-03-24T04:26:20.124Z",
+      "modifiedAt": "2025-03-24T04:26:20.124Z",
       "order": 0
+    },
+    "page-1": {
+      "id": "page-1",
+      "title": "Page 1",
+      "content": "Edit this<div><br></div><div><br></div><div>&nbsp;section to&nbsp;<div><div class=\"wiki-image-container\" style=\"\">\n        <img src=\"http://localhost:3001/api/wiki/2/images/1742790396830-trust_logomdpi.png\" alt=\"Wiki Image\" style=\"width: 300px; display: block; margin-left: auto; margin-right: auto; margin-bottom: 10px;\" class=\"wiki-image\">\n      </div><br></div><div><br></div><div>add content.</div></div>",
+      "parentId": null,
+      "children": [],
+      "tags": [],
+      "createdAt": "2025-03-24T04:26:26.672Z",
+      "modifiedAt": "2025-03-24T04:26:40.868Z",
+      "order": 1
     }
   },
   "tags": [],
-  "createdAt": "2025-03-22T08:29:54.725Z",
-  "modifiedAt": "2025-03-22T08:29:54.725Z",
-  "logoUrl": ""
+  "createdAt": "2025-03-24T04:26:20.124Z",
+  "modifiedAt": "2025-03-24T04:26:20.124Z",
+  "logoUrl": "",
+  "defaultAuthor": ""
 }
