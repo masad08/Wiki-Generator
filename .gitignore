@@ -1,20 +1,30 @@
 # Dependencies
 node_modules
+node_modules/
+jspm_packages/
 /.pnp
 .pnp.js
+.pnp.*
 
 # Testing
 /coverage
+coverage
+*.lcov
+.nyc_output
 
 # Next.js
 /.next/
 /out/
+.next
+out
 app/frontend/.next/
 
 # Production
 /build
 /dist
+dist
 app/backend/dist/
+build/Release
 
 # Misc
 .DS_Store
@@ -24,6 +34,8 @@ app/backend/dist/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
 # Local env files
 .env
@@ -44,3 +56,46 @@ app/frontend/data/tables/
 *.njsproj
 *.sln
 *.sw?
+.vscode-test
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Cache directories
+.cache
+.parcel-cache
+.npm
+.eslintcache
+.stylelintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+.temp
+
+# TypeScript
+*.tsbuildinfo
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.yarn-integrity
+
+# Other
+.lock-wscript
+.node_repl_history
+*.tgz
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.docusaurus
