@@ -47,14 +47,48 @@ The application includes a custom-built rich text editor with the following feat
 
 ## Installation
 
-### Using Docker (Recommended)
+### Quick Start with Docker Hub (Recommended)
 
-The easiest way to run Wiki Generator is using Docker and Docker Compose.
+The easiest way to run Wiki Generator is using the pre-built Docker image:
+
+1. Pull the image:
+```
+docker pull drmasad/wiki-generator:latest
+```
+
+2. Create a docker-compose.yml file:
+```yaml
+version: '3'
+
+services:
+  wiki-generator:
+    image: drmasad/wiki-generator:latest
+    ports:
+      - "3030:3000"
+      - "3031:3001"
+    volumes:
+      - ./created_wikis:/app/created_wikis
+    environment:
+      - NODE_ENV=production
+```
+
+3. Start the container:
+```
+docker-compose up -d
+```
+
+4. Access the application:
+   - Frontend: http://localhost:3030
+   - Backend API: http://localhost:3031
+
+### Building from Source with Docker
+
+If you prefer to build the Docker image yourself:
 
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/wiki-generator.git
-cd wiki-generator
+git clone https://github.com/masad08/Wiki-Generator.git
+cd Wiki-Generator
 ```
 
 2. Start the Docker containers:
@@ -72,8 +106,8 @@ If you prefer to run the application without Docker:
 
 1. Clone the repository:
 ```
-git clone https://github.com/yourusername/wiki-generator.git
-cd wiki-generator
+git clone https://github.com/masad08/Wiki-Generator.git
+cd Wiki-Generator
 ```
 
 2. Install backend dependencies:
@@ -140,7 +174,7 @@ To contribute to the development of Wiki Generator:
 
 MIT License
 
-Copyright (c) 2023 [Dr M. As'ad]
+Copyright (c) 2023 masad08
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -151,3 +185,11 @@ furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
